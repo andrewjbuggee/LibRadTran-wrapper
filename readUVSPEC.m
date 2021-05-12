@@ -17,6 +17,8 @@ headerLine = 0; % 0 if no header
 
 data = importdata([path,fileName],delimeter,headerLine);
 
+x = [1,2,3]; % important line
+
 
 
 
