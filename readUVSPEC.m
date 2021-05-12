@@ -20,4 +20,6 @@ data = importdata([path,fileName],delimeter,headerLine);
 x = [1 2 3]; % This is very important
 y = [2 4 6]; % another important line
 
+z = x.^3; 
+
 
