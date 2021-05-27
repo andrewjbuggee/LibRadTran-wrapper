@@ -7,21 +7,48 @@
 % the cell array.
 
 
-clear all; close all;
+
 % --- By Andrew J. Buggee ---
 %% --- Read in Files ---
 
-[fileName,path] = uigetfile('.txt');
+function [dataStruct,headers_units] = readUVSPEC(path,fileName)
+
+
+% [fileName,path] = uigetfile('.txt');
 delimeter = ' ';
 headerLine = 0; % 0 if no header
 
 data = importdata([path,fileName],delimeter,headerLine);
 
-x = [1,2,3]; % important line
 
-% Now I will make lots of important changes in the new branch. Lets see if
-% this comes up in my remote branch. 
+%% --- Converstion to a Structure ---
 
-y = fft(x); % wow! an fft!
+% if the RTE solver is disort, sdisort, or spsdisort
 
+headers_units = cell(2,7);
+headers_units{1,1} = 'wavelength';
+headers_units{1,2} = 'dirIrrad';
+headers_units{1,3} = 'difDwnIrrad';
+headers_units{1,4} = 'difUpIrrad';
+headers_units{1,5} = 'dirContMeanIrrad';
+headers_units{1,6} = 'difDwnContMeanIrrad';
+headers_units{1,7} = 'difUpContMeanIrrad';
+headers_units{2,1} = 'nm';
+headers_units{2,2} = 'mW/(m^{2} nm)';
+headers_units{2,3} = 'mW/(m^{2} nm)';
+headers_units{2,4} = 'mW/(m^{2} nm)';
+headers_units{2,5} = 'mW/(m^{2} nm)';
+headers_units{2,6} = 'mW/(m^{2} nm)';
+headers_units{2,7} = 'mW/(m^{2} nm)';
+
+% and now we'll create the structure
+
+dataStruct = struct(headers_units{1,1},data(:,1),headers_units{1,2},data(:,2),...
+    headers_units{1,3},data(:,3),headers_units{1,4},data(:,4),...
+    headers_units{1,5},data(:,5),headers_units{1,6},data(:,6),...
+    headers_units{1,7},data(:,7));
+
+
+
+end
 
