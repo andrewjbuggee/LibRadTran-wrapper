@@ -18,7 +18,7 @@
 % --- By Andrew J. Buggee ---
 %% --- Read in Files ---
 
-function [dataStruct,irrad_headers_units] = readUVSPEC(path,fileName,inputSettings)
+function [dataStruct,irrad_headers_units,rad_headers_units,irradianceData,radianceData] = readUVSPEC(path,fileName,inputSettings)
 
 % How many files do we need to read?
 
@@ -56,13 +56,13 @@ end
 %% ----- Unpack the Input Settings -----
 
 rte_solver = inputSettings{1};
-umuVec = inputSettings{3};
-phiVec = inputSettings{5};
+umuVec = inputSettings{2};
+phiVec = inputSettings{3};
 
 numUmu = length(umuVec);
 numPhi = length(phiVec);
 
-%% ----- Pull out a few vectors from the data table -----
+%% ----- Pull out radiance and irradiance from the data table -----
 
 % find the wavelength vector
 % the first column include wavelength values as well as values for the
@@ -77,6 +77,12 @@ wavelength = col1(indexWave); % units of nanometers
 % lets find the rows where the radiance data start. Each radiance data row
 % will start with a umu value and end with either a positive number greater
 % than 0 or a nan
+
+% ---- There is a problem with the statement below! ----
+% The umu values can have some overlap with the phi values. The most common
+% one will be 0. One way to get around this is that phi values always come
+% immediately after the wavelength values. So the umu values would have to
+% be atleast 2 rows belows the wavelength row.
 
 indexRadRow = ismember(col1,umuVec); % rows where radiance data begins
 
@@ -99,12 +105,32 @@ if isempty(indexNan_col1)==true % I don't think this will ever be false
     % vector
     if rem(numPhi+2,size(data,2))==0
         
+        % if this is true, there are non NaNs and we dont need to worry
+        % about extra rows
         indexRadRow = repmat(indexRadRow,1,size(data,2));
         
         radianceData = data(indexRadRow);
         radianceData = reshape(radianceData,sum(indexRadRow(:,1)),[]);
         
+        
+    elseif floor((numPhi+2)/size(data,2))==0
+        
+        % if this is true, there are NaNs but we don't need to worry about
+        % extra rows
+        indexRadRow = repmat(indexRadRow,1,size(data,2));
+        
+        % we need to get rid of the NaNs so we can easily recover the order
+        % of the data table
+        data(isnan(data))=0;
+        
+        radianceData = data(indexRadRow);
+        radianceData = reshape(radianceData,sum(indexRadRow(:,1)),[]);
+        radianceData(:,(numPhi+2+1):end) = [];
     else
+        % if this is true, there are NaNs to account for, and there are
+        % rows of data after each logical 1 in indexRadRow that we need to
+        % add to our logical index
+        
         indexRadRow(find(indexRadRow)+1) = 1; % this adds a 1 to every row after a 1, since we need the row below
         indexRadRow = repmat(indexRadRow,1,size(data,2));
         
@@ -182,6 +208,9 @@ end
 %   azimuthally averaged radiance at umu angles. Units: (mW/m^2/sr/s)
 
 
+% we want an array ouput of the irradiance and radiance data for wasy
+% analysis, and we want a structure output for easy manipulation on the fly
+
 
 
 if strcmp(rte_solver,'disort')==true
@@ -217,29 +246,58 @@ if strcmp(rte_solver,'disort')==true
     
     
     % and now we'll create the structure
+    % we'll start by creating the wavelength vector
+    
+    
     
     if numFiles2Read==1
         if numUmu==0
-            dataStruct = struct(irrad_headers_units{1,1},data(:,1),irrad_headers_units{1,2},data(:,2),...
+            % if we have to zenith view angles, then only irradiance is
+            % calculated
+            
+            dataStruct = struct(irrad_headers_units{1,2},data(:,2),...
                 irrad_headers_units{1,3},data(:,3),irrad_headers_units{1,4},data(:,4),...
                 irrad_headers_units{1,5},data(:,5),irrad_headers_units{1,6},data(:,6),...
                 irrad_headers_units{1,7},data(:,7),irrad_headers_units{1,8},data(:,8));
             
+            dataStruct.wavelength = wavelength;
+            
         elseif numUmu>0
+            % if we do have zenith viewing angles defined, then uvspec
+            % calculates both irradiance and radiance
             
             rad_headers_units = cell(2,2);
             rad_headers_units{1,1} = 'azAvgRad';
-            rad_headers_units{1,2} = 'Rad_umu_phi';
+            rad_headers_units{1,2} = 'rad-umu-phi';
             rad_headers_units{2,1} = 'mW/(m^{2}/sr/s)';
             rad_headers_units{2,2} = 'mW/(m^{2}/sr/s)';
             
-            dataStruct = struct('irradiance',struct(irrad_headers_units{1,1},irradianceData(:,1),...
-                irrad_headers_units{1,2},irradianceData(:,2),...
+            dataStruct = struct('irradiance',struct(irrad_headers_units{1,2},irradianceData(:,2),...
                 irrad_headers_units{1,3},irradianceData(:,3),irrad_headers_units{1,4},irradianceData(:,4),...
                 irrad_headers_units{1,5},irradianceData(:,5),irrad_headers_units{1,6},irradianceData(:,6),...
-                irrad_headers_units{1,7},irradianceData(:,7),irrad_headers_units{1,8},irradianceData(:,8)),...
-                'radiance',struct(rad_headers_units{1,1},radianceData(:,2),...
-                rad_headers_units{1,2},radianceData(:,3:end)));
+                irrad_headers_units{1,7},irradianceData(:,7),irrad_headers_units{1,8},irradianceData(:,8)));
+            
+            dataStruct.wavelength = wavelength;
+            dataStruct.radiance(1).geometry = 'umu,phi'; % format of the geometry for each vector
+            
+            % now we need the index for constant geometry but changing
+            % wavelength
+            
+            
+            for jj = 1:numPhi
+                for kk = 1:numUmu
+                    ind = sub2ind([numUmu,numPhi],kk,jj);
+                    dataStruct.radiance(ind+1).geometry = [num2str(umuVec(kk)),',',num2str(phiVec(jj))];
+                    
+                    indexCol = 2 + jj; % The first two colums contain stuff we currently don't care about like the umu value and the azimuthally averaged radiance
+                    indexRow = kk:numUmu:size(radianceData,1);
+                    
+                    dataStruct.radiance(ind).rad_umu_phi = radianceData(indexRow,indexCol); % this gives us vectors of constant geometry but changing wavelength
+                    
+                     
+                end
+            end
+            
             
         end
         
