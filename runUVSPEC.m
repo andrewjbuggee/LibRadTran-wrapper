@@ -38,10 +38,16 @@ textFile = fileread([folderName,inputName]);
 expr1 = '[^\n]*rte_solver [^\n]*';
 expr2 = '[^\n]*umu [^\n]*';
 expr3 = '[^\n]*phi [^\n]*';
+expr4 = '[^\n]*sza [^\n]*';
+expr5 = '[^\n]*phi0 [^\n]*';
+expr6 = '[^\n]*zout [^\n]*';
 
 match1 = regexp(textFile,expr1,'match'); % find rte_solver typ
 match2 = regexp(textFile,expr2,'match'); % find consine of viewing angle vector
 match3 = regexp(textFile,expr3,'match'); % find azimuth viewing angle vector
+match4 = regexp(textFile,expr4,'match'); % find the solar zenith angle
+match5 = regexp(textFile,expr5,'match'); % find the solar azimuth angle
+match6 = regexp(textFile,expr6,'match'); % find the sensor altitude
 
 
 index1 = find(match1{1}==' '); % find the spaces
@@ -51,6 +57,13 @@ index2_dots = regexp(match2{1},'[.]'); % Brackets treat the symbol literally. nu
 
 index3_spaces = regexp(match3{1},'\s'); % find the spaces
 index3_dots = regexp(match3{1},'[.]'); % Brackets treat the symbol literally. number of decimals tells us how many values there are in the vector
+
+index4_spaces = regexp(match4{1},'\s'); % find the spaces. There is only 1 value for the solar zenith angle
+
+index5_spaces = regexp(match5{1},'\s'); % find the spaces. There is only 1 value per file for the solar azimuth
+
+index6_spaces = regexp(match6{1},'\s'); % find the spaces. There is only 1 value per file for the solar azimuth
+
 
 
 % determine the rte_solver type
@@ -74,12 +87,26 @@ end
 
 phiVec = str2double(phiStr);
 
-inputSettings{1} = rte_solver;
-inputSettings{2} = umuStr;
-inputSettings{3} = umuVec;
-inputSettings{4} = phiStr;
-inputSettings{5} = phiVec;
+% find the solar zenith angle
+sza = match4{1}(index4_spaces(1)+1:index4_spaces(2)-1);
+sza = str2double(sza);
 
+% find the solar azimuth angle
+saz = match5{1}(index5_spaces(1)+1:index5_spaces(2)-1);
+saz = str2double(saz);
+
+% find the sensor altitude
+zout = match6{1}(index6_spaces(1)+1:index6_spaces(2)-1);
+zout = str2double(zout);
+
+
+% Pull all input settings into a cell array
+inputSettings{1} = rte_solver;
+inputSettings{2} = umuVec;
+inputSettings{3} = phiVec;
+inputSettings{4} = sza;
+inputSettings{5} = saz;
+inputSettings{6} = zout;
 
 %% Running the .INP file from the command line
 
