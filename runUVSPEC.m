@@ -97,7 +97,12 @@ saz = str2double(saz);
 
 % find the sensor altitude
 zout = match6{1}(index6_spaces(1)+1:index6_spaces(2)-1);
-zout = str2double(zout);
+if strcmp(zout,'toa')==true
+    zout = 100; % top of atm is 100 km
+else
+   zout = str2double(zout);
+end
+
 
 
 % Pull all input settings into a cell array

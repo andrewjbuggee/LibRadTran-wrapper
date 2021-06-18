@@ -67,7 +67,7 @@ outputArg2 = inputArg2;
 %   2) umu - Cosine(Zenith Viewing Angle) - Cosine of the viewing angle
 %   where a viewing angle of 0 is straight down into the Earth, rather than
 %   straight up. But according to the manual, umu>0 is looking downward
-%   (e.g. a satellite). So what this might mean is when umu<0 the default
+%   (e.g. a satellite). So what this might mean is when umu>0 the default
 %   sensor height is at TOA. umu<0 is looking upward. To make a
 %   vector, just include spaces in between each value. note: a umu of 0 is
 %   not allowed! This will lead to infinities because 1/umu when umu of 0
