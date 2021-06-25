@@ -119,6 +119,19 @@ outputArg2 = inputArg2;
 %       formula is different from option 1: I/(I0 * cos(x)) where
 %       x is the solar zenith angle
 
+%% ---- RUNNING CUSTOM FILES -----
+
+% It appears there is a limit to the level of organizaiton LibRadTran will
+% allow. Within the folder 'libRadtran-2.0.4', I'm only able to creat 1
+% single additional folder. For example, I could make the directory
+% '.../libRadtran-2.0.4/clouds' and here I can save several .INP file to
+% run using uvspec. But if I added an additional directory, such as
+% '.../libRadtran-2.0.4/clouds/opticallyThin', uvspec throws out an error
+% saying it cannot find data files to create an atmosphere or wavelength
+% grid. Apparently the logic in uvspec expects the directory 'data' to be
+% only one level up from the current folder. This is stupid, but be
+% careful!
+
 
 end
 
