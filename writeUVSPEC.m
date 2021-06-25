@@ -67,7 +67,7 @@ outputArg2 = inputArg2;
 %   2) umu - Cosine(Zenith Viewing Angle) - Cosine of the viewing angle
 %   where a viewing angle of 0 is straight down into the Earth, rather than
 %   straight up. But according to the manual, umu>0 is looking downward
-%   (e.g. a satellite). So what this might mean is when umu<0 the default
+%   (e.g. a satellite). So what this might mean is when umu>0 the default
 %   sensor height is at TOA. umu<0 is looking upward. To make a
 %   vector, just include spaces in between each value. note: a umu of 0 is
 %   not allowed! This will lead to infinities because 1/umu when umu of 0
@@ -118,6 +118,19 @@ outputArg2 = inputArg2;
 %       spectral transmittance instead of absolute quantities. But its
 %       formula is different from option 1: I/(I0 * cos(x)) where
 %       x is the solar zenith angle
+
+%% ---- RUNNING CUSTOM FILES -----
+
+% It appears there is a limit to the level of organizaiton LibRadTran will
+% allow. Within the folder 'libRadtran-2.0.4', I'm only able to creat 1
+% single additional folder. For example, I could make the directory
+% '.../libRadtran-2.0.4/clouds' and here I can save several .INP file to
+% run using uvspec. But if I added an additional directory, such as
+% '.../libRadtran-2.0.4/clouds/opticallyThin', uvspec throws out an error
+% saying it cannot find data files to create an atmosphere or wavelength
+% grid. Apparently the logic in uvspec expects the directory 'data' to be
+% only one level up from the current folder. This is stupid, but be
+% careful!
 
 
 end

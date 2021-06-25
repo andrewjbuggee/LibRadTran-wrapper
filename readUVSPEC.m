@@ -18,7 +18,7 @@
 % --- By Andrew J. Buggee ---
 %% --- Read in Files ---
 
-function [dataStruct,irrad_headers_units,rad_headers_units,irradianceData,radianceData] = readUVSPEC(path,fileName,inputSettings)
+function [dataStruct,irrad_headers_units,rad_headers_units] = readUVSPEC(path,fileName,inputSettings)
 
 % How many files do we need to read?
 
@@ -37,13 +37,13 @@ headerLine = 0; % 0 if no header
 data = [];
 
 if numFiles2Read==1
-    data = importdata([path,fileName],delimeter,headerLine);
+    data = importdata([path,fileName,'.OUT'],delimeter,headerLine);
     
 elseif numFiles2Read>1
     
     for ii = 1:numFiles2Read
         
-        data = cat(3,data,importdata([path,fileName{ii}],delimeter,headerLine));
+        data = cat(3,data,importdata([path,fileName{ii},'.OUT'],delimeter,headerLine));
         
     end
     
@@ -55,12 +55,26 @@ end
 
 %% ----- Unpack the Input Settings -----
 
-rte_solver = inputSettings{1};
-umuVec = inputSettings{2};
-phiVec = inputSettings{3};
+if numFiles2Read>1
+    
+    rte_solver = inputSettings(1,:);
+    umuVec = [inputSettings{2,:}];
+    phiVec = [inputSettings{3,:}];
 
-numUmu = length(umuVec);
-numPhi = length(phiVec);
+    numUmu = length(umuVec);
+    numPhi = length(phiVec);
+    
+    
+else
+    
+    rte_solver = inputSettings{1};
+    umuVec = inputSettings{2};
+    phiVec = inputSettings{3};
+
+    numUmu = length(umuVec);
+    numPhi = length(phiVec);
+
+end
 
 %% ----- Pull out radiance and irradiance from the data table -----
 
@@ -68,6 +82,8 @@ numPhi = length(phiVec);
 % the first column include wavelength values as well as values for the
 % cosine of the viewing angle, umu. umu has a range of [-1,1]. so to find
 % wavelength values we just search for all values greater than 1.
+
+
 col1 = data(:,1);
 nonNanRows = sum(isnan(data),2)==0; % find rows where there are no nans
 index150 = col1>150; % find values in the first column greater than 150
@@ -278,7 +294,6 @@ if strcmp(rte_solver,'disort')==true
                 irrad_headers_units{1,7},irradianceData(:,7),irrad_headers_units{1,8},irradianceData(:,8)));
             
             dataStruct.wavelength = wavelength;
-            dataStruct.radiance(1).geometry = 'umu,phi'; % format of the geometry for each vector
             
             % now we need the index for constant geometry but changing
             % wavelength
@@ -287,7 +302,7 @@ if strcmp(rte_solver,'disort')==true
             for jj = 1:numPhi
                 for kk = 1:numUmu
                     ind = sub2ind([numUmu,numPhi],kk,jj);
-                    dataStruct.radiance(ind+1).geometry = [num2str(umuVec(kk)),',',num2str(phiVec(jj))];
+                    dataStruct.radiance(ind).umu_phi = [num2str(umuVec(kk)),',',num2str(phiVec(jj))];
                     
                     indexCol = 2 + jj; % The first two colums contain stuff we currently don't care about like the umu value and the azimuthally averaged radiance
                     indexRow = kk:numUmu:size(radianceData,1);
