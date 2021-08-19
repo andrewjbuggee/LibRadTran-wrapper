@@ -66,25 +66,41 @@ outputArg2 = inputArg2;
 
 %   2) umu - Cosine(Zenith Viewing Angle) - Cosine of the viewing angle
 %   where a viewing angle of 0 is straight down into the Earth, rather than
-%   straight up. But according to the manual, umu>0 is looking downward
+%   straight up. According to the manual, umu>0 is looking downward
 %   (e.g. a satellite). So what this might mean is when umu>0 the default
 %   sensor height is at TOA. umu<0 is looking upward. To make a
-%   vector, just include spaces in between each value. note: a umu of 0 is
-%   not allowed! This will lead to infinities because 1/umu when umu of 0
-%   is infinity. And this is how we calculate the slant path. The values have to
-%   be increasing in order to be read. Units: degrees
+%   vector, just include spaces in between each value. If you set the
+%   sensor altitude to be toa, then only values where umu>0 will give
+%   non-zero radiance values, since umu>0 signals uvspec to look down.
+%   Looking back into space will cause errors. If your sensor is at an
+%   altitude of 10km, the umu=0 is looking horizontally, umu>0 is looking
+%   down towards the surface, and umu<0 is looking upwards towards the sky.
+%   note: a umu of 0 is not allowed! This will lead to infinities because
+%   1/umu when umu of 0 is infinity. And this is how we calculate the 
+%   slant path. The values have to be increasing in order to be read. 
+%   Units: degrees
 
 %   3) phi - sensor aziumuth - this is the azimuth of the sensor. This can
 %   be input as a vector by leaving a blank space inbetween values. If a
 %   vector is used, values must be increasing. Units: degrees
 
-%   5) zout - sensor altitude - the atmospheric profiles will adjust
-%   according to where the sensor is. For a satellite, set: zout TOA. This
+%   5) zout - sensor altitude - the value is measured in km and must be
+%   within the range of your atmospheric model defined by 'atmosphere
+%   file'. For a satellite, set: zout TOA. This
 %   will place the sensor at the top of the atmosphere. Then all umu values
 %   should be greater than zero to specify looking downward. If zout is 0,
 %   then umu should always be less than zero to specify that you are
-%   looking upward.
+%   looking upward. You can also set 'zout sur', to set the sensor at
+%   the lowest atmospheric level. More than one value is allowed, but they
+%   must be increasing in magnitude. Units: km
 
+%   6) altitude - the level of the location above sea level, measured in
+%   km. For example, if the input was 'altitude 1.25' then the lowest level
+%   in the atmopshere model would be 1.25 km above sea level. The
+%   atmosphere file is appropriately scaled to take this into account. Note
+%   this is different from zout. If we set 'altitude 0.5' and 'zout 1' then
+%   the surface is set at 0.5km above sea level and the sensor is 1 km
+%   above the surface. Units: km
 
 %% ---- Wavelength range and Slit Functions ----
 

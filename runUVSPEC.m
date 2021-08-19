@@ -151,19 +151,39 @@ if numFiles2Run==1
         end
         
         % now we clip source to match the length of our wavelength vector
-        indexSource = source(:,1)>=wavelength(1) & source(:,1)<=wavelength(2);
-        source = source(repmat(indexSource,1,2));
-        source = reshape(source,size(source,1)/2,[]);
+        % if we run a monochromatic calculation, we do the following first.
+        % Then, for multispectral calculations
+        if length(wavelength)==1
+            indexSource = source(:,1)==round(wavelength); % can only have integer values for wavelength
+            source = source(repmat(indexSource,1,2));
+            source = reshape(source,size(source,1)/2,[]);
+            
+        elseif length(wavelength)>1
+            
+            indexSource = source(:,1)>=wavelength(1) & source(:,1)<=wavelength(2);
+            source = source(repmat(indexSource,1,2));
+            source = reshape(source,size(source,1)/2,[]);
+        end
     end
     
     % Pull all input settings into a cell array
-    inputSettings{1} = rte_solver;
-    inputSettings{2} = umuVec;
-    inputSettings{3} = phiVec;
-    inputSettings{4} = sza;
-    inputSettings{5} = saz;
-    inputSettings{6} = zout;
-    inputSettings{7} = source;
+    % first lets give them headers and labels:
+    
+    inputSettings{1,1} = 'Solver Type';
+    inputSettings{1,2} = 'Cos(sza)';
+    inputSettings{1,3} = 'Azimuthal Angle';
+    inputSettings{1,4} = 'Solar Zenith Angle';
+    inputSettings{1,5} = 'Solar Azimuthal Angle';
+    inputSettings{1,6} = 'Sensor Altitude (km)';
+    inputSettings{1,7} = 'Source Wavelength (nm) and Irradiance';
+    
+    inputSettings{2,1} = rte_solver;
+    inputSettings{2,2} = umuVec;
+    inputSettings{2,3} = phiVec;
+    inputSettings{2,4} = sza;
+    inputSettings{2,5} = saz;
+    inputSettings{2,6} = zout;
+    inputSettings{2,7} = source;
     
 elseif numFiles2Run>1
     
