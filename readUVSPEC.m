@@ -67,9 +67,9 @@ if numFiles2Read>1
     
 else
     
-    rte_solver = inputSettings{1};
-    umuVec = inputSettings{2};
-    phiVec = inputSettings{3};
+    rte_solver = inputSettings{2,1};
+    umuVec = inputSettings{2,2};
+    phiVec = inputSettings{2,3};
 
     numUmu = length(umuVec);
     numPhi = length(phiVec);
@@ -249,6 +249,8 @@ if strcmp(rte_solver,'disort')==true
     
     % Using these default outputs, we will want the following additional
     % outputs
+    
+    % the first one calculates the total downward irradiance
     irrad_headers_units{1,8} = 'totDwnIrrad';
     irrad_headers_units{2,8} = 'mW/(m^{2} nm)';
     
