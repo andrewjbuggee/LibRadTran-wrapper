@@ -65,70 +65,85 @@ if numFiles2Run==1
     match7 = regexp(textFile,expr7,'match'); % find the source file
     match8 = regexp(textFile,expr8,'match'); % find the wavelength range in order to trim the source file
     
-    index1 = find(match1{1}==' '); % find the spaces
+    index1_space1 = regexp(match1{1},'\s[a-z]+'); % find the spaces
+    index1_space2 = regexp(match1{1},'[a-z]\s+'); % the second index should be the last letter in the solver type
     
-    index2_spaces = regexp(match2{1},'\s'); % find the spaces
-    index2_dots = regexp(match2{1},'[.]'); % Brackets treat the symbol literally. number of decimals tells us how many values there are in the vector
+    index2_space1 = regexp(match2{1},'\s[0123456789]+'); % find a space that is followed by a number
+    index2_space2 = regexp(match2{1},'[0123456789]\s+'); % find a space that comes after a number
     
-    index3_spaces = regexp(match3{1},'\s'); % find the spaces
-    index3_dots = regexp(match3{1},'[.]'); % Brackets treat the symbol literally. number of decimals tells us how many values there are in the vector
+    index3_space1 = regexp(match3{1},'\s[0123456789]+'); % find a space that is followed by a number
+    index3_space2 = regexp(match3{1},'[0123456789]\s+'); % find a space that comes after a number
     
-    index4_spaces = regexp(match4{1},'\s'); % find the spaces. There is only 1 value for the solar zenith angle
+    index4_space1 = regexp(match4{1},'\s[0123456789]+'); % There is only 1 value for the solar zenith angle
+    index4_space2 = regexp(match4{1},'[0123456789]\s+'); % find a space that comes after a number
     
-    index5_spaces = regexp(match5{1},'\s'); % find the spaces. There is only 1 value per file for the solar azimuth
+    index5_space1 = regexp(match5{1},'\s[0123456789]+'); % There is only 1 value for the solar zenith angle
+    index5_space2 = regexp(match5{1},'[0123456789]\s+'); % find a space that comes after a number
     
-    index6_spaces = regexp(match6{1},'\s'); % find the spaces. There is only 1 value per file for the sensor altitude
+    index6_space1 = regexp(match6{1},'\s[0123456789]+'); % There is only 1 value for the solar zenith angle
+    index6_space2 = regexp(match6{1},'[0123456789]\s+'); % find a space that comes after a number
     
-    index7_spaces = regexp(match7{1},'\s'); % find the spaces
-    index7_slashes = regexp(match7{1},'[/]'); % Brackets treat the symbol literally. number of decimals tells us how many values there are in the vector
+    index7_space1 = regexp(match7{1},'\s[a-z]'); % find the spaces
+    index7_space2 = regexp(match7{1},'[a-z]\s'); % Brackets treat the symbol literally. number of decimals tells us how many values there are in the vector
+    index7_file1 = regexp(match7{1},'flux[/][a-z]'); % find the locaition a letter follows two dots and a forward slash
+    index7_file2 = regexp(match7{1},'[.]dat');
     
-    index8_spaces = regexp(match8{1},'\s'); % find the spaces
-    index8_dots = regexp(match8{1},'[.]'); % Brackets treat the symbol literally. number of decimals tells us how many values there are in the vector
-    
+    index8_space1 = regexp(match8{1},'\s[0123456789]+'); % There is only 1 value for the solar zenith angle
+    index8_space2 = regexp(match8{1},'[0123456789]\s+'); % find a space that comes after a number
     
     
     % determine the rte_solver type
-    rte_solver = match1{1}(index1(1)+1:index1(2)-1);
+    rte_solver = match1{1}(index1_space1(1)+1:index1_space2(2));
     
     % determine the umu vector
-    umuStr = cell(1,length(index2_dots));
+    umuStr = cell(1,length(index2_space1));
     
-    for ii = 1:length(index2_dots)
-        umuStr{ii} = match2{1}(index2_spaces(ii)+1:index2_spaces(ii+1)-1);
+    for ii = 1:length(index2_space1)
+        umuStr{ii} = match2{1}(index2_space1(ii)+1:index2_space2(ii));
     end
     
     umuVec = str2double(umuStr);
     
     % determine the phi vector
-    phiStr = cell(1,length(index3_dots));
+    phiStr = cell(1,length(index3_space1));
     
-    for ii = 1:length(index3_dots)
-        phiStr{ii} = match3{1}(index3_spaces(ii)+1:index3_spaces(ii+1)-1);
+    for ii = 1:length(index3_space1)
+        phiStr{ii} = match3{1}(index3_space1(ii)+1:index3_space2(ii));
     end
     
     phiVec = str2double(phiStr);
     
     % find the solar zenith angle
-    sza = match4{1}(index4_spaces(1)+1:index4_spaces(2)-1);
+    sza = match4{1}(index4_space1+1:index4_space2);
     sza = str2double(sza);
     
     % find the solar azimuth angle
-    saz = match5{1}(index5_spaces(1)+1:index5_spaces(2)-1);
+    saz = match5{1}(index5_space1+1:index5_space2);
     saz = str2double(saz);
     
     % find the sensor altitude
-    zout = match6{1}(index6_spaces(1)+1:index6_spaces(2)-1);
-    if strcmp(zout,'toa')==true
-        zout = 100; % top of atm is 100 km
-    else
+    
+    
+    if isempty(index6_space1)==false
+        zout = match6{1}(index6_space1(1)+1:index6_space2(2)-1); % this would be for a numeric value
         zout = str2double(zout);
+    elseif isempty(index6_space1)==true
+        indexString1 = regexp(match6{1},'\s[a-z][a-z][a-z]'); % this would be for a string value like toa or boa
+        indexString2 = regexp(match6{1},'[a-z]\s');
+        zout_str = match6{1}(indexString1(1)+1:indexString2(2));
+        
+        if strcmp(zout_str,'toa')==true
+            zout = 100;
+        elseif strcmp(zout_str,'boa')==true
+            zout = 0;
+        end
     end
     
     % find the wavelength range of the output file
-    wavelength_str= cell(1,length(index8_dots));
+    wavelength_str= cell(1,length(index8_space1));
     
-    for ii = 1:length(index8_dots)
-        wavelength_str{ii} = match8{1}(index8_spaces(ii)+1:index8_spaces(ii+1)-1);
+    for ii = 1:length(index8_space1)
+        wavelength_str{ii} = match8{1}(index8_space1(ii)+1:index8_space2(ii));
     end
     wavelength = str2double(wavelength_str);
     
@@ -136,10 +151,10 @@ if numFiles2Run==1
     % we want to store the source flux as a vector
     % all solar source files will be located in the folder: /Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/LibRadTran/libRadtran-2.0.4/data/solar_flux
     % all thermal source files will be located in the foler:
-    if strcmp('solar',match7{1}(index7_spaces(1)+1:index7_spaces(2)-1))
+    if strcmp('solar',match7{1}(index7_space1(1)+1:index7_space2(2)))
         folderSolar = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
             'LibRadTran/libRadtran-2.0.4/data/solar_flux/'];
-        fileSolar = match7{1}(index7_slashes(end)+1:index7_spaces(3)-1);
+        fileSolar = match7{1}(index7_file1(1)+5:index7_file2(1)+3);
         sourceFile = fileread([folderSolar,fileSolar]);
         
         exprSource = '[^\n]*[\d][\d] [^\n]*'; % look for the new lines with atleast two digits in a row
@@ -170,7 +185,7 @@ if numFiles2Run==1
     % first lets give them headers and labels:
     
     inputSettings{1,1} = 'Solver Type';
-    inputSettings{1,2} = 'Cos(sza)';
+    inputSettings{1,2} = 'Cos(zva)';
     inputSettings{1,3} = 'Azimuthal Angle';
     inputSettings{1,4} = 'Solar Zenith Angle';
     inputSettings{1,5} = 'Solar Azimuthal Angle';
@@ -187,7 +202,15 @@ if numFiles2Run==1
     
 elseif numFiles2Run>1
     
-    inputSettings = cell(7,numFiles2Run);
+    inputSettings = cell(numFiles2Run+1,7);
+    
+    inputSettings{1,1} = 'Solver Type';
+    inputSettings{1,2} = 'Cos(zva)';
+    inputSettings{1,3} = 'Azimuthal Angle';
+    inputSettings{1,4} = 'Solar Zenith Angle';
+    inputSettings{1,5} = 'Solar Azimuthal Angle';
+    inputSettings{1,6} = 'Sensor Altitude (km)';
+    inputSettings{1,7} = 'Source Wavelength (nm) and Irradiance';
     
     for jj=1:numFiles2Run
         
@@ -211,70 +234,85 @@ elseif numFiles2Run>1
         match7 = regexp(textFile,expr7,'match'); % find the source file
         match8 = regexp(textFile,expr8,'match'); % find the wavelength range in order to trim the source file
         
-        index1 = find(match1{1}==' '); % find the spaces
+        index1_space1 = regexp(match1{1},'\s[a-z]+'); % find the spaces
+        index1_space2 = regexp(match1{1},'[a-z]\s+'); % the second index should be the last letter in the solver type
         
-        index2_spaces = regexp(match2{1},'\s'); % find the spaces
-        index2_dots = regexp(match2{1},'[.]'); % Brackets treat the symbol literally. number of decimals tells us how many values there are in the vector
+        index2_space1 = regexp(match2{1},'\s[0123456789]+'); % find a space that is followed by a number
+        index2_space2 = regexp(match2{1},'[0123456789]\s+'); % find a space that comes after a number
         
-        index3_spaces = regexp(match3{1},'\s'); % find the spaces
-        index3_dots = regexp(match3{1},'[.]'); % Brackets treat the symbol literally. number of decimals tells us how many values there are in the vector
+        index3_space1 = regexp(match3{1},'\s[0123456789]+'); % find a space that is followed by a number
+        index3_space2 = regexp(match3{1},'[0123456789]\s+'); % find a space that comes after a number
         
-        index4_spaces = regexp(match4{1},'\s'); % find the spaces. There is only 1 value for the solar zenith angle
+        index4_space1 = regexp(match4{1},'\s[0123456789]+'); % There is only 1 value for the solar zenith angle
+        index4_space2 = regexp(match4{1},'[0123456789]\s+'); % find a space that comes after a number
         
-        index5_spaces = regexp(match5{1},'\s'); % find the spaces. There is only 1 value per file for the solar azimuth
+        index5_space1 = regexp(match5{1},'\s[0123456789]+'); % There is only 1 value for the solar zenith angle
+        index5_space2 = regexp(match5{1},'[0123456789]\s+'); % find a space that comes after a number
         
-        index6_spaces = regexp(match6{1},'\s'); % find the spaces. There is only 1 value per file for the sensor altitude
+        index6_space1 = regexp(match6{1},'\s[0123456789]+'); % There is only 1 value for the solar zenith angle
+        index6_space2 = regexp(match6{1},'[0123456789]\s+'); % find a space that comes after a number
         
-        index7_spaces = regexp(match7{1},'\s'); % find the spaces
-        index7_slashes = regexp(match7{1},'[/]'); % Brackets treat the symbol literally. number of decimals tells us how many values there are in the vector
+        index7_space1 = regexp(match7{1},'\s[a-z]'); % find the spaces
+        index7_space2 = regexp(match7{1},'[a-z]\s'); % Brackets treat the symbol literally. number of decimals tells us how many values there are in the vector
+        index7_file1 = regexp(match7{1},'flux[/][a-z]'); % find the locaition a letter follows two dots and a forward slash
+        index7_file2 = regexp(match7{1},'[.]dat');
         
-        index8_spaces = regexp(match8{1},'\s'); % find the spaces
-        index8_dots = regexp(match8{1},'[.]'); % Brackets treat the symbol literally. number of decimals tells us how many values there are in the vector
-        
+        index8_space1 = regexp(match8{1},'\s[0123456789]+'); % There is only 1 value for the solar zenith angle
+        index8_space2 = regexp(match8{1},'[0123456789]\s+'); % find a space that comes after a number
         
         
         % determine the rte_solver type
-        rte_solver = match1{1}(index1(1)+1:index1(2)-1);
+        rte_solver = match1{1}(index1_space1(1)+1:index1_space2(2));
         
         % determine the umu vector
-        umuStr = cell(1,length(index2_dots));
+        umuStr = cell(1,length(index2_space1));
         
-        for ii = 1:length(index2_dots)
-            umuStr{ii} = match2{1}(index2_spaces(ii)+1:index2_spaces(ii+1)-1);
+        for ii = 1:length(index2_space1)
+            umuStr{ii} = match2{1}(index2_space1(ii)+1:index2_space2(ii));
         end
         
         umuVec = str2double(umuStr);
         
         % determine the phi vector
-        phiStr = cell(1,length(index3_dots));
+        phiStr = cell(1,length(index3_space1));
         
-        for ii = 1:length(index3_dots)
-            phiStr{ii} = match3{1}(index3_spaces(ii)+1:index3_spaces(ii+1)-1);
+        for ii = 1:length(index3_space1)
+            phiStr{ii} = match3{1}(index3_space1(ii)+1:index3_space2(ii));
         end
         
         phiVec = str2double(phiStr);
         
         % find the solar zenith angle
-        sza = match4{1}(index4_spaces(1)+1:index4_spaces(2)-1);
+        sza = match4{1}(index4_space1+1:index4_space2);
         sza = str2double(sza);
         
         % find the solar azimuth angle
-        saz = match5{1}(index5_spaces(1)+1:index5_spaces(2)-1);
+        saz = match5{1}(index5_space1+1:index5_space2);
         saz = str2double(saz);
         
         % find the sensor altitude
-        zout = match6{1}(index6_spaces(1)+1:index6_spaces(2)-1);
-        if strcmp(zout,'toa')==true
-            zout = 100; % top of atm is 100 km
-        else
+        
+        
+        if isempty(index6_space1)==false
+            zout = match6{1}(index6_space1(1)+1:index6_space2(2)-1); % this would be for a numeric value
             zout = str2double(zout);
+        elseif isempty(index6_space1)==true
+            indexString1 = regexp(match6{1},'\s[a-z][a-z][a-z]'); % this would be for a string value like toa or boa
+            indexString2 = regexp(match6{1},'[a-z]\s');
+            zout_str = match6{1}(indexString1(1)+1:indexString2(2));
+            
+            if strcmp(zout_str,'toa')==true
+                zout = 100;
+            elseif strcmp(zout_str,'boa')==true
+                zout = 0;
+            end
         end
         
         % find the wavelength range of the output file
-        wavelength_str= cell(1,length(index8_dots));
+        wavelength_str= cell(1,length(index8_space1));
         
-        for ii = 1:length(index8_dots)
-            wavelength_str{ii} = match8{1}(index8_spaces(ii)+1:index8_spaces(ii+1)-1);
+        for ii = 1:length(index8_space1)
+            wavelength_str{ii} = match8{1}(index8_space1(ii)+1:index8_space2(ii));
         end
         wavelength = str2double(wavelength_str);
         
@@ -282,10 +320,10 @@ elseif numFiles2Run>1
         % we want to store the source flux as a vector
         % all solar source files will be located in the folder: /Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/LibRadTran/libRadtran-2.0.4/data/solar_flux
         % all thermal source files will be located in the foler:
-        if strcmp('solar',match7{1}(index7_spaces(1)+1:index7_spaces(2)-1))
+        if strcmp('solar',match7{1}(index7_space1(1)+1:index7_space2(2)))
             folderSolar = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
                 'LibRadTran/libRadtran-2.0.4/data/solar_flux/'];
-            fileSolar = match7{1}(index7_slashes(end)+1:index7_spaces(3)-1);
+            fileSolar = match7{1}(index7_file1(1)+5:index7_file2(1)+3);
             sourceFile = fileread([folderSolar,fileSolar]);
             
             exprSource = '[^\n]*[\d][\d] [^\n]*'; % look for the new lines with atleast two digits in a row
@@ -297,19 +335,29 @@ elseif numFiles2Run>1
             end
             
             % now we clip source to match the length of our wavelength vector
-            indexSource = source(:,1)>=wavelength(1) & source(:,1)<=wavelength(2);
-            source = source(repmat(indexSource,1,2));
-            source = reshape(source,size(source,1)/2,[]);
+            % if we run a monochromatic calculation, we do the following first.
+            % Then, for multispectral calculations
+            if length(wavelength)==1
+                indexSource = source(:,1)==round(wavelength); % can only have integer values for wavelength
+                source = source(repmat(indexSource,1,2));
+                source = reshape(source,size(source,1)/2,[]);
+                
+            elseif length(wavelength)>1
+                
+                indexSource = source(:,1)>=wavelength(1) & source(:,1)<=wavelength(2);
+                source = source(repmat(indexSource,1,2));
+                source = reshape(source,size(source,1)/2,[]);
+            end
         end
         
         % Pull all input settings into a cell array
-        inputSettings{1,jj} = rte_solver;
-        inputSettings{2,jj} = umuVec;
-        inputSettings{3,jj} = phiVec;
-        inputSettings{4,jj} = sza;
-        inputSettings{5,jj} = saz;
-        inputSettings{6,jj} = zout;
-        inputSettings{7,jj} = source;
+        inputSettings{jj+1,1} = rte_solver;
+        inputSettings{jj+1,2} = umuVec;
+        inputSettings{jj+1,3} = phiVec;
+        inputSettings{jj+1,4} = sza;
+        inputSettings{jj+1,5} = saz;
+        inputSettings{jj+1,6} = zout;
+        inputSettings{jj+1,7} = source;
         
     end
 end
