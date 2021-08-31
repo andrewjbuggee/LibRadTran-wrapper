@@ -287,7 +287,7 @@ elseif numFiles2Run>1
         sza = str2double(sza);
         
         % find the solar azimuth angle
-        saz = match5{1}(index5_space1+1:index5_space2);
+        saz = match5{1}(index5_space1+1:index5_space2(2));
         saz = str2double(saz);
         
         % find the sensor altitude
