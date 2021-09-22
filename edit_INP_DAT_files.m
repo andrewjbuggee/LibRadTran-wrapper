@@ -14,6 +14,8 @@
 
 function [] = edit_INP_DAT_files(oldFolder,newFolder,oldFile,newFile,oldExpr,newExpr)
 
+if ischar(newExpr)==1
+
 % open old file to edit
 oldText = fileread([oldFolder,oldFile]);
 
@@ -26,6 +28,21 @@ oldText(endI:(endI+length(oldExpr)-1)) = newExpr; % insert new expression
 % save the edited text as a new file in the new folder
 writematrix(oldText,[newFolder,newFile],'Delimiter',' ','FileType','text','QuoteStrings',0);
 
+elseif iscell(newExpr)==true
+    
+    
+    
+    if length(oldExpr)==length(newExpr)
+        
+        
+    elseif length(oldExpr) == 1
+        % if the old expression 
+        
+    else
+        
+        error('I dont know what to do with the old expressions. The length of this cell array is not right')
+        
+    end
 
 
 

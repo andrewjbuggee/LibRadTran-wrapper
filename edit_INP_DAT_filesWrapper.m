@@ -5,10 +5,10 @@
 % By Andrew J. Buggee
 %% --- EDIT .INP Files ---
 
-wavelengthBand = '2_14';
+wavelengthBand ='0_65';
 
 oldFolder = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
-            'LibRadTran/libRadtran-2.0.4/Reflectance_Function_MODIS_',wavelengthBand,'mu_rev2/'];
+            'LibRadTran/libRadtran-2.0.4/MODIS_08_25_2021/',wavelengthBand,'mu_rev2/'];
         
 newFolder = oldFolder;
 
