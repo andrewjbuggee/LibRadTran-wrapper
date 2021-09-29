@@ -14,7 +14,7 @@
 
 %%
 
-function [] = write_INP_4_MODIS_hdf(EV,solar,sensor,stepSize)
+function [] = write_INP_4_MODIS_hdf(inpNames)
 
 % for each spectral bin, we have an image on the ground composed of 2030 *
 % 1354 pixels. The swath on the ground is large enough that the solar
@@ -22,70 +22,61 @@ function [] = write_INP_4_MODIS_hdf(EV,solar,sensor,stepSize)
 % each pixel, we could calculate the reflectance function and how it varies
 % with changing tau and change re. 
 
-tau_c = [1,5:30]; % range of cloud optical depth stored in the cloud file
-re = 4:4:20; % range of effective droplet radius stored in the cloud files
 
 % a template file has been set up to be edited and saved as a new file
-oldFolder = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
-    'LibRadTran/libRadtran-2.0.4/MODIS_08_25_2021/'];
-oldFile = 'band_sza_saz_template.INP';
+oldFolder = ['/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/MODIS_08_25_2021/'];
 
 % Define where the new file should be saved
 newFolder = oldFolder;
 
 
+% introduce change variables in the file name
+re = 4:4:20; % effective radius
+tau_c = [1,5:5:30]; % cloud optical depth
+
+
+
+
 % lets determine the band, the solar zenith angle, the solar azimuth angle,
 % the viewing zenith angle and the zenith azimuth angle
-numRows = size(solar.zenith,1);
-numCols = size(solar.zenith,2);
+% numRows = size(solar.zenith,1);
+% numCols = size(solar.zenith,2);
+% 
+% numBands = length(EV.bands.number);
 
-numBands = length(EV.bands.number);
+% step through each file, edit it and save it as a new file
 
-for kk = 1:numBands
+for kk = 1: length(inpNames)
     
-    
-    for ii = 1:stepSize:numRows
-        
-        for jj = 1:stepSize:numCols
+    for ii = 1:length(re)
+        for jj = 1:length(tau_c)
             
-            % create new file name
-            bandName = num2str(EV.bands.center);
-            szaName = num2str(solar(ii,jj).zenith);
-            sazName = num2str(solar(ii,jj),azimuth);
+            % redefine the old file each time
+            oldFile = inpNames{kk};
+            newFile = [inpNames{kk}(1:end-4),'_r_',num2str(re(ii)),'_T_',num2str(tau_c(jj)),'.INP'];
             
+            oldExpr = 'wc_file 1D ../data/wc/WC_r04_T01.DAT';
             
-            newFile = ['band_',bandName,'_sza_',szaName,'_saz_',sazName,'.INP'];
-            
-            newExpr{1} = num2str(solar.zenith(ii,jj)./100); % solar zenith angle
-            newExpr{2} = num2str(solar.azimuth(ii,jj)./100); % solar azimuth angle
-            
-            newExpr{3} = num2str(sensor.zenith(ii,jj)./100); % sensor zenith angle, as seen from the pixel on the ground
-            newExpr{4} = num2str(sensor.azimuth(ii,jj)./100); % sensor azimuth angle, as seen from the pixel on the ground
-            
-            newExpr{5} = num2str([EV.bands.lowerBound EV.bands.upperBound]);  % lower and upper bound of the spectral bin
-            
-            oldExpr{1} = 'sza 0.0'; % solar zenith angle
-            oldExpr{2} = 'phi0 0.0'; % solar azimuthal angle
-            oldExpr{3} = 'umu 0.0'; % cosine of the zenith view angle
-            oldExpr{4} = 'phi 0.0'; % viewing azimuth angle
-            oldExpr{5} = 'wavelength 0.0 0.0'; % wavelength range in nm, we want to change the lower and upper bound using new expr
-            
-            
-            
+            if re(ii)<10 && tau_c(jj)<10
+                newExpr = ['wc_file 1D ../data/wc/WC_r0',num2str(re(ii)),'_T0',num2str(tau_c(jj)),'.DAT'];
                 
-             edit_INP_DAT_files(oldFolder,newFolder,oldFile,newFile,oldExpr,newExpr);
-
+            elseif re(ii)>=10 && tau_c(jj)<10
+                newExpr = ['wc_file 1D ../data/wc/WC_r',num2str(re(ii)),'_T0',num2str(tau_c(jj)),'.DAT'];
+            elseif re(ii)>=10 && tau_c(jj)>=10
+                newExpr = ['wc_file 1D ../data/wc/WC_r',num2str(re(ii)),'_T',num2str(tau_c(jj)),'.DAT'];
+            elseif re(ii)<10 && tau_c(jj)>=10
+                newExpr = ['wc_file 1D ../data/wc/WC_r0',num2str(re(ii)),'_T',num2str(tau_c(jj)),'.DAT'];
+                
+            end
             
             
             
+            edit_INP_DAT_files(oldFolder,newFolder,oldFile,newFile,oldExpr,newExpr);
             
         end
-        
-        
     end
     
 end
-
 
 
 

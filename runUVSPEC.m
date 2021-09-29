@@ -321,8 +321,16 @@ elseif numFiles2Run>1
         % all solar source files will be located in the folder: /Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/LibRadTran/libRadtran-2.0.4/data/solar_flux
         % all thermal source files will be located in the foler:
         if strcmp('solar',match7{1}(index7_space1(1)+1:index7_space2(2)))
-            folderSolar = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
-                'LibRadTran/libRadtran-2.0.4/data/solar_flux/'];
+            % find which computer you're running on
+            if strcmp(folderName(1:15),'/Users/anbu8374')
+                folderSolar = ['/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/data/solar_flux/'];
+                
+            elseif strcmp(folderName(1:19),'/Users/andrewbuggee')
+                folderSolar = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
+                    'LibRadTran/libRadtran-2.0.4/data/solar_flux/'];
+            else
+                error('Dont reconginze the libradtran solar flux folder')
+            end
             fileSolar = match7{1}(index7_file1(1)+5:index7_file2(1)+3);
             sourceFile = fileread([folderSolar,fileSolar]);
             
