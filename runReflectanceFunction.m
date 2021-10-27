@@ -8,7 +8,12 @@
 
 %%
 
-function [R,Rl] = runReflectanceFunction(re,tau_c,folderName,inputFileNames,outputFileNames)
+function [R,Rl] = runReflectanceFunction(inputs,folderName,inputFileNames,outputFileNames)
+
+% extract inputs
+
+re = inputs.re;
+tau_c = inputs.tau_c;
 
 
 R = cell(size(inputFileNames)); % each value here is integrated over the band provided
@@ -43,17 +48,15 @@ for ii = 1:size(inputFileNames,3)
         for jj = 1:length(outputFileNames(kk,:,ii))
             
             [ds{jj},~,~] = readUVSPEC(folderName,outputFileNames{kk,jj,ii},inputSettings(jj+1,:)); % headers don't change per iteration
-            [R{kk,jj},Rl{kk,jj}] = reflectanceFunction(inputSettings(jj+1,:),ds{jj});
+            [R{kk,jj,ii},Rl{kk,jj,ii}] = reflectanceFunction(inputSettings(jj+1,:),ds{jj});
             
         end
         
         
     end
     
-    expr = '_band_[0123456789]';
-    [startI,endI] = regexp(inputFileNames{1,1,ii},expr);
-    
-    save([inputFileNames{1,1,ii},'_ReflectanceFunc.mat'],"R","Rl","tau_c","re"); % save inputSettings to the same folder as the input and output file
+    % save just the geometry and band number
+    save([inputFileNames{1,1,ii}(1:39),'_ReflectanceFunc.mat'],"R","Rl","tau_c","re"); % save inputSettings to the same folder as the input and output file
 
     
 end

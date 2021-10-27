@@ -15,35 +15,50 @@
 function [] = edit_INP_DAT_files(oldFolder,newFolder,oldFile,newFile,oldExpr,newExpr)
 
 if ischar(newExpr)==1
-
-% open old file to edit
-oldText = fileread([oldFolder,oldFile]);
-
-% find location of expression to change
-[~,endI] = regexp(oldText,oldExpr,'match'); % find the old expression location
-
-% replace old expression with new expression
-oldText(endI:(endI+length(oldExpr)-1)) = newExpr; % insert new expression
-
-% save the edited text as a new file in the new folder
-writematrix(oldText,[newFolder,newFile],'Delimiter',' ','FileType','text','QuoteStrings',0);
-
-elseif iscell(newExpr)==true
     
+    % open old file to edit
+    oldText = fileread([oldFolder,oldFile]);
+    
+    % find location of expression to change
+    [~,endI] = regexp(oldText,oldExpr,'match'); % find the old expression location
+    
+    % replace old expression with new expression
+    oldText(endI:(endI+length(oldExpr)-1)) = newExpr; % insert new expression
+    
+    % save the edited text as a new file in the new folder
+    writematrix(oldText,[newFolder,newFile],'Delimiter',' ','FileType','text','QuoteStrings',0);
+    
+elseif iscell(newExpr)==true
+    % if there are multiple expressions to edit, the oldExpr cell has to be
+    % the same length as the newExpr cell
     
     
     if length(oldExpr)==length(newExpr)
         
+        % open old file to edit
+        oldText = fileread([oldFolder,oldFile]);
         
-    elseif length(oldExpr) == 1
-        % if the old expression 
+        for ii = 1:length(oldExpr)
+            
+        % find location of expression to change
+        [~,endI] = regexp(oldText,oldExpr{ii},'match'); % find the old expression location
         
-    else
+        % replace old expression with new expression
+        oldText(endI:(endI+length(oldExpr{ii})-1)) = newExpr{ii}; % insert new expression
         
-        error('I dont know what to do with the old expressions. The length of this cell array is not right')
+        end
+        
+        % save the edited text as a new file in the new folder
+        writematrix(oldText,[newFolder,newFile],'Delimiter',' ','FileType','text','QuoteStrings',0);
+        
+        
+    elseif length(oldExpr) ~= length(newExpr)
+        
+        
+        error('The length of the old expressions doesnt equal the length of the new expressions')
         
     end
-
-
-
+    
+    
+    
 end

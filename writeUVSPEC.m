@@ -58,11 +58,16 @@ outputArg2 = inputArg2;
 
 %% --- Geometry Configuration ----
 
-%   1) sza - Solar Zenith Angle - There can only be one per file. Units:
-%   degrees
+%   1) sza - Solar Zenith Angle - There can only be one per file. The
+%   default value is 0, which implies that the sun is directly over had,
+%   and along the line that intercepts with the earths center of mass. This
+%   means the sun is on the horizon with an angle of 90. UVSPEC purports a
+%   measured radiance of 0 over the solar spectrum at this angle. Angles
+%   greater than 90 and up to 180 consittute a sun that is below the
+%   horizon. Values between [0,180].  Units: degrees
 
 %   4) phi0 - Solar Azimuth Angle - There can only be one per file. Units:
-%   degrees
+%   degrees. Values are between [0,360]
 
 %   2) umu - Cosine(Zenith Viewing Angle) - Cosine of the viewing angle
 %   where a viewing angle of 0 is straight down into the Earth, rather than
@@ -82,7 +87,11 @@ outputArg2 = inputArg2;
 
 %   3) phi - sensor aziumuth - this is the azimuth of the sensor. This can
 %   be input as a vector by leaving a blank space inbetween values. If a
-%   vector is used, values must be increasing. Units: degrees
+%   vector is used, values must be increasing. Units: degrees. Values are
+%   between [0,360], where 0 implies a device in the North looking
+%   South, 90 implies a device in the East looking West, 180 implies a
+%   device in the South looking North, and 270 implies a device in the West
+%   looking East. 
 
 %   5) zout - sensor altitude - the value is measured in km and must be
 %   within the range of your atmospheric model defined by 'atmosphere
