@@ -152,10 +152,10 @@ if numFiles2Run==1
     % all solar source files will be located in the folder: /Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/LibRadTran/libRadtran-2.0.4/data/solar_flux
     % all thermal source files will be located in the foler:
     if strcmp('solar',match7{1}(index7_space1(1)+1:index7_space2(2)))
-        folderSolar = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
-            'LibRadTran/libRadtran-2.0.4/data/solar_flux/'];
+%         folderSolar = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
+%             'LibRadTran/libRadtran-2.0.4/data/solar_flux/'];
         fileSolar = match7{1}(index7_file1(1)+5:index7_file2(1)+3);
-        sourceFile = fileread([folderSolar,fileSolar]);
+        sourceFile = fileread([fileSolar]);
         
         exprSource = '[^\n]*[\d][\d] [^\n]*'; % look for the new lines with atleast two digits in a row
         matchSource = regexp(sourceFile,exprSource,'match'); % find rte_solver typ
@@ -393,9 +393,28 @@ end
 
 
 % --- Point to locaiton of uvspec program ---
-uvspec_folderName = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/'...
-    'Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
-    'LibRadTran/libRadtran-2.0.4/bin/'];
+
+% To run uvspec in the command line we have to point to its full location.
+% To do this we will check to see what computer we are using
+
+usrName = whatComputer;
+
+if strcmp('anbu8374',usrName)
+    
+        uvspec_folderName = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/bin/';
+    
+elseif strcmp('andrewbuggee',usrName)
+    
+    uvspec_folderName = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/'...
+        'Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
+        'LibRadTran/libRadtran-2.0.4/bin/'];
+    
+else 
+    
+    error('I dont know where the uvspec function is! Tell me what folder its in, please')
+    
+end
+
 
 % using the function 'system' runs commans in the terminal window
 cmnd1 = ['cd ', folderName];
