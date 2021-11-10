@@ -14,6 +14,20 @@
 
 function [] = edit_INP_DAT_files(oldFolder,newFolder,oldFile,newFile,oldExpr,newExpr)
 
+% if new folder doesnt exist, create it. First, lets add the libRadTran
+% directory to the search path
+libRadTran_path = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
+    'LibRadTran/libRadtran-2.0.4'];
+
+addpath(libRadTran_path);
+
+if isfolder(newFolder) == false
+    
+    mkdir([libRadTran_path,'/',newFolder]);
+    
+end
+
+
 if ischar(newExpr)==1
     
     % open old file to edit

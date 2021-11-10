@@ -5,16 +5,13 @@
 %   specific band. A data cube will not work
 %   - solar: the solar strucutre that contains the solar locaiton
 %   - sensor: the sensor structure that contains locaiton of the sensor
-%   - stepSize: The EV array is usually thousands of pixels wide on either
-%   side. If you pick a stepSize of 1, ever single a radiative transfer
-%   file .INP will be calculated for the geometry of every pixel. If you'd
-%   like to write a .INP for every 500 pixels, set the step size to be 500.
+
 
 % By Andrew J. Buggee
 
 %%
 
-function [inpNames] = write_INP_4_MODIS_hdf(inputs,modis)
+function [inpNames] = write_INP_4_MODIS_hdf(inputs,pixels,modis)
 
 % for each spectral bin, we have an image on the ground composed of 2030 *
 % 1354 pixels. The swath on the ground is large enough that the solar
@@ -25,8 +22,9 @@ function [inpNames] = write_INP_4_MODIS_hdf(inputs,modis)
 re = inputs.re;
 tau_c = inputs.tau_c;
 bands2run = inputs.bands2run;
-pixel_row = inputs.pixel_row;
-pixel_col = inputs.pixel_col;
+pixel_row = pixels.res1km.row; % for everything I need in this code, we use the 1km resolution pixel locations
+pixel_col = pixels.res1km.col; % 
+newFolder = inputs.INP_folderName; % where the newly created .inp files will be saved
 
 % a template file has been set up to be edited and saved as a new file
 % determine which computer is being used
@@ -34,37 +32,54 @@ userName = whatComputer;
 
 if strcmp(userName,'anbu8374')
     
-    oldFolder = ['/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/MODIS_08_25_2021/'];
+    templateFolder = ['/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/INP_template_files/'];
 elseif strcmp(userName,'andrewbuggee')
-    oldFolder = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/',...
-        'Hyperspectral-Cloud-Droplet-Retrieval-Research/LibRadTran/libRadtran-2.0.4/MODIS_08_25_2021/'];
+    templateFolder = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/',...
+        'Hyperspectral-Cloud-Droplet-Retrieval-Research/LibRadTran/libRadtran-2.0.4/INP_template_files/'];
 else
     error('I dont recognize this computer user name')
 end
-% Define where the new file should be saved
-newFolder = oldFolder;
+
 
 % we always edit the template file
 oldFile = 'band_sza_saz_template.INP';
-
-
-% lets determine the geometry of the pixel in question
-
-sza = modis.solar.zenith(pixel_row,pixel_col);
-saz = modis.solar.azimuth(pixel_row,pixel_col);
-
-% we need the cosine of the zenith viewing angle
-umu = round(cosd(double(modis.sensor.zenith(pixel_row,pixel_col))),3); % values are in degrees
-phi = modis.sensor.azimuth(pixel_row,pixel_col);
-
-% create the begining of the file name string
-fileBegin = ['pixel_',num2str(pixel_row),'r_',num2str(pixel_col),'c_sza_',num2str(sza),'_saz_',num2str(saz),'_band_'];
 
 
 % define the expressions that you wish to edit in the template file
 
 oldExpr = {'wc_file 1D ../data/wc/WC_r04_T01.DAT', 'wavelength 0.00000 0.000000',...
     'sza 0000.0','phi0 0000.0','umu 0000.0','phi 0000.0'};
+
+
+
+
+
+% we have 4 for loops to step throug
+
+%   1) pixel
+%   2) modis band
+%   3) re
+%   4) tau_c
+
+
+% step through each band, each effective raidus and each optical depth
+inpNames = cell(length(pixel_row), length(re),length(tau_c),length(bands2run));
+
+for pp = 1:length(pixel_row)
+    
+    % lets determine the geometry of the pixel in question
+
+sza = modis.solar.zenith(pixel_row(pp),pixel_col(pp));
+saz = modis.solar.azimuth(pixel_row(pp),pixel_col(pp));
+
+% we need the cosine of the zenith viewing angle
+umu = round(cosd(double(modis.sensor.zenith(pixel_row(pp),pixel_col(pp)))),3); % values are in degrees
+phi = modis.sensor.azimuth(pixel_row(pp),pixel_col(pp));
+
+
+
+% ----- lets edit the newExpression string -----
+
 
 % some new expressions change in the for loop, and others are fixed like
 % the geometry of the chosen pixel
@@ -111,6 +126,7 @@ elseif length(str) > length(oldExpr{4})
 end
 
 newExpr{4} = str;
+
 
 % now lets write the cosine of the zentih viewing angle. LibRadTran defines
 % this as looking down on the earth, measuring upwelling radiation if umu>0
@@ -175,8 +191,10 @@ newExpr{6} = str;
 
 
 
-% step through each band, each effective raidus and each optical depth
-inpNames = cell(length(re),length(tau_c),length(bands2run));
+
+% create the begining of the file name string
+fileBegin = ['pixel_',num2str(pixel_row(pp)),'r_',num2str(pixel_col(pp)),'_c_sza_',num2str(sza),'_saz_',num2str(saz),'_band_'];
+    
 
 for kk = 1: length(bands2run)
     
@@ -208,7 +226,7 @@ for kk = 1: length(bands2run)
         for jj = 1:length(tau_c)
             
             % redefine the old file each time
-            inpNames{ii,jj,kk} = [fileBegin,num2str(kk),'_r_',num2str(re(ii)),'_T_',num2str(tau_c(jj)),'.INP'];
+            inpNames{ii,jj,kk} = [pixel_name,fileBegin,num2str(kk),'_r_',num2str(re(ii)),'_T_',num2str(tau_c(jj)),'.INP'];
             
             % lets define the new expressions to substitute the old ones
             
@@ -229,7 +247,7 @@ for kk = 1: length(bands2run)
             
             
             
-            edit_INP_DAT_files(oldFolder,newFolder,oldFile,inpNames{ii,jj,kk},oldExpr,newExpr);
+            edit_INP_DAT_files(templateFolder,newFolder,oldFile,inpNames{ii,jj,kk},oldExpr,newExpr);
             
         end
     end
