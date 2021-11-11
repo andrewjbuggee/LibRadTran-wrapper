@@ -10,20 +10,25 @@
 
 function [outputNames] = writeOutputNames(inputNames)
 
-numRows = size(inputNames,1);
-numCols = size(inputNames,2);
-numZ = size(inputNames,3);
+numPixels = size(inputNames,1);
+num_radii = size(inputNames,2);
+num_tau = size(inputNames,3);
+num_bands = size(inputNames,4);
 
 outputNames = cell(size(inputNames));
 
-for ii = 1:numZ
+for pp = 1:numPixels
     
-    for jj = 1:numRows
+    for rr = 1:num_radii
         
-        for kk = 1:numCols
+        for tt = 1:num_tau
             
-            outputNames{jj,kk,ii} = ['OUTPUT_',inputNames{jj,kk,ii}(1:end-4)];
-         
+            for bb = 1:num_bands
+                
+                outputNames{pp,rr,tt,bb} = ['OUTPUT_',inputNames{pp,rr,tt,bb}(1:end-4)];
+                
+                
+            end
             
         end
         

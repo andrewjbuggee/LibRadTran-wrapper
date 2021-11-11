@@ -11,7 +11,32 @@
 
 %%
 
-function [inpNames] = write_INP_4_MODIS_hdf(inputs,pixels,modis)
+function [inpNames] = write_INP_4_MODIS_hdf(inputs,pixels2use,modis)
+
+
+% what computer are we using?
+
+% a template file has been set up to be edited and saved as a new file
+% determine which computer is being used
+userName = whatComputer;
+
+if strcmp(userName,'anbu8374')
+    
+        libRadTran_path = ['/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4'];
+    templateFolder = ['/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/INP_template_files/'];
+elseif strcmp(userName,'andrewbuggee')
+    
+    libRadTran_path = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
+    'LibRadTran/libRadtran-2.0.4'];
+    templateFolder = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/',...
+        'Hyperspectral-Cloud-Droplet-Retrieval-Research/LibRadTran/libRadtran-2.0.4/INP_template_files/'];
+else
+    error('I dont recognize this computer user name')
+end
+
+
+
+addpath(libRadTran_path);
 
 % for each spectral bin, we have an image on the ground composed of 2030 *
 % 1354 pixels. The swath on the ground is large enough that the solar
@@ -22,27 +47,15 @@ function [inpNames] = write_INP_4_MODIS_hdf(inputs,pixels,modis)
 re = inputs.re;
 tau_c = inputs.tau_c;
 bands2run = inputs.bands2run;
-pixel_row = pixels.res1km.row; % for everything I need in this code, we use the 1km resolution pixel locations
-pixel_col = pixels.res1km.col; % 
-newFolder = inputs.INP_folderName; % where the newly created .inp files will be saved
+pixel_row = pixels2use.res1km.row; % for everything I need in this code, we use the 1km resolution pixel locations
+pixel_col = pixels2use.res1km.col; %
+newFolder = [libRadTran_path,'/',inputs.INP_folderName]; % where the newly created .inp files will be saved
 
-% a template file has been set up to be edited and saved as a new file
-% determine which computer is being used
-userName = whatComputer;
 
-if strcmp(userName,'anbu8374')
-    
-    templateFolder = ['/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/INP_template_files/'];
-elseif strcmp(userName,'andrewbuggee')
-    templateFolder = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/',...
-        'Hyperspectral-Cloud-Droplet-Retrieval-Research/LibRadTran/libRadtran-2.0.4/INP_template_files/'];
-else
-    error('I dont recognize this computer user name')
-end
 
 
 % we always edit the template file
-oldFile = 'band_sza_saz_template.INP';
+oldFile = 'band_sza_saz__oceanSurface_template.INP';
 
 
 % define the expressions that you wish to edit in the template file
@@ -68,195 +81,205 @@ inpNames = cell(length(pixel_row), length(re),length(tau_c),length(bands2run));
 for pp = 1:length(pixel_row)
     
     % lets determine the geometry of the pixel in question
-
-sza = modis.solar.zenith(pixel_row(pp),pixel_col(pp));
-saz = modis.solar.azimuth(pixel_row(pp),pixel_col(pp));
-
-% we need the cosine of the zenith viewing angle
-umu = round(cosd(double(modis.sensor.zenith(pixel_row(pp),pixel_col(pp)))),3); % values are in degrees
-phi = modis.sensor.azimuth(pixel_row(pp),pixel_col(pp));
-
-
-
-% ----- lets edit the newExpression string -----
-
-
-% some new expressions change in the for loop, and others are fixed like
-% the geometry of the chosen pixel
-% the new expressions have to be the same length. For geometry that means
-% we always need 4 numerals and a decimal point
-
-% lets fix the solar zenith angle first
-str = ['sza ',num2str(sza),'.0'];
-
-if length(str) < length(oldExpr{3})
     
-    lengthDiff = length(oldExpr{3}) - length(str);
-    for ii = 1:(lengthDiff) % the minus one accounts for the decimal point
-        str = [str,'0'];
-    end
+    sza = modis.solar.zenith(pixel_row(pp),pixel_col(pp));
+    saz = modis.solar.azimuth(pixel_row(pp),pixel_col(pp));
     
-elseif length(str) > length(oldExpr{3})
-    
-    error('new expression is greater than the old in expression in length')
-    
-end
-
-newExpr{3} = str;
-
-% now lets write the new solar azimuth angle. Modis defines the azimuth
-% angle as [0,180] and [-180,0, whereas libradtran defines the azimuth
-% angle as [0,360]. So we need to make this adjustment
-if saz<0
-    saz = saz+360;
-end
-str = ['phi0 ',num2str(saz),'.0'];
-
-if length(str) < length(oldExpr{4})
-    
-    lengthDiff = length(oldExpr{4}) - length(str);
-    for ii = 1:(lengthDiff) % the minus one accounts for the decimal point
-        str = [str,'0'];
-    end
-    
-elseif length(str) > length(oldExpr{4})
-    
-    error('new expression is greater than the old in expression in length')
-    
-end
-
-newExpr{4} = str;
-
-
-% now lets write the cosine of the zentih viewing angle. LibRadTran defines
-% this as looking down on the earth, measuring upwelling radiation if umu>0
-% and being on the earth looking up, measuring downwelling radition, if
-% umu<0. If umu is 0, it implies a device looking horizontally. MODIS
-% defines the sensor zenith angle to be between 0 and 180, where 0 is at
-% zenith. This is equivelant to the libradtran method since cos(0)=1
-% implies a device looking down. A sensor zenith of 180 implies looking up,
-% and cos(180) = -1, which is the same definition libradtran uses.
-
-if umu==1 || umu==-1 || umu==0
-    str = ['umu ',num2str(umu),'.0'];
-else
-    str = ['umu ',num2str(umu)];
-end
-
-if length(str) < length(oldExpr{5})
-    
-    lengthDiff = length(oldExpr{5}) - length(str);
-    for ii = 1:(lengthDiff) % the minus one accounts for the decimal point
-        str = [str,'0'];
-    end
-    
-elseif length(str) > length(oldExpr{5})
-    
-    % if the new string is greater than the old, we will assume there are
-    % zeros at the end that can be delted, or that the extra precision is
-    % not neccessary
-    lengthDiff = length(str) - length(oldExpr{5});
-    
-    str = str(1:(end-lengthDiff));
+    % we need the cosine of the zenith viewing angle
+    umu = round(cosd(double(modis.sensor.zenith(pixel_row(pp),pixel_col(pp)))),3); % values are in degrees
+    phi = modis.sensor.azimuth(pixel_row(pp),pixel_col(pp));
     
     
-end
-
-newExpr{5} = str;
-
-% now lets write the azimuth viewing angle. Modis defines the azimuth
-% angle as [0,180] and [-180,0], whereas libradtran defines the azimuth
-% angle as [0,360]. So we need to make this adjustment
-
-if phi<0
-    phi = phi+360;
-end
-
-str = ['phi ',num2str(phi),'.0'];
-
-if length(str) < length(oldExpr{6})
     
-    lengthDiff = length(oldExpr{6}) - length(str);
-    for ii = 1:(lengthDiff) % the minus one accounts for the decimal point
-        str = [str,'0'];
-    end
+    % ----- lets edit the newExpression string -----
     
-elseif length(str) > length(oldExpr{6})
     
-    error('new expression is greater than the old in expression in length')
+    % some new expressions change in the for loop, and others are fixed like
+    % the geometry of the chosen pixel
+    % the new expressions have to be the same length. For geometry that means
+    % we always need 4 numerals and a decimal point
     
-end
-
-newExpr{6} = str;
-
-
-
-
-% create the begining of the file name string
-fileBegin = ['pixel_',num2str(pixel_row(pp)),'r_',num2str(pixel_col(pp)),'_c_sza_',num2str(sza),'_saz_',num2str(saz),'_band_'];
+    % lets fix the solar zenith angle first
+    str = ['sza ',num2str(sza),'.0'];
     
-
-for kk = 1: length(bands2run)
-    
-    % create the new expression for the wavelength band of interest
-    if kk<=2
-        str = ['wavelength ',num2str(modis.EV.m250.bands.lowerBound(kk)),'.0 ',...
-            num2str(modis.EV.m250.bands.upperBound(kk)),'.0'];
-    elseif kk>2
-        str = ['wavelength ',num2str(modis.EV.m500.bands.lowerBound(kk-2)),'.0 ',...
-            num2str(modis.EV.m500.bands.upperBound(kk-2)),'.0'];
-    end
-    
-    if length(str) < length(oldExpr{2})
+    if length(str) < length(oldExpr{3})
         
-        lengthDiff = length(oldExpr{2}) - length(str);
+        lengthDiff = length(oldExpr{3}) - length(str);
         for ii = 1:(lengthDiff) % the minus one accounts for the decimal point
             str = [str,'0'];
         end
         
-    elseif length(str) > length(oldExpr{2})
+    elseif length(str) > length(oldExpr{3})
         
         error('new expression is greater than the old in expression in length')
         
     end
     
-    newExpr{2} = str;
+    newExpr{3} = str;
     
-    for ii = 1:length(re)
-        for jj = 1:length(tau_c)
-            
-            % redefine the old file each time
-            inpNames{ii,jj,kk} = [pixel_name,fileBegin,num2str(kk),'_r_',num2str(re(ii)),'_T_',num2str(tau_c(jj)),'.INP'];
-            
-            % lets define the new expressions to substitute the old ones
-            
-            if re(ii)<10 && tau_c(jj)<10
-                newExpr{1} = ['wc_file 1D ../data/wc/WC_r0',num2str(re(ii)),'_T0',num2str(tau_c(jj)),'.DAT'];
-                
-            elseif re(ii)>=10 && tau_c(jj)<10
-                newExpr{1} = ['wc_file 1D ../data/wc/WC_r',num2str(re(ii)),'_T0',num2str(tau_c(jj)),'.DAT'];
-                
-            elseif re(ii)>=10 && tau_c(jj)>=10
-                newExpr{1} = ['wc_file 1D ../data/wc/WC_r',num2str(re(ii)),'_T',num2str(tau_c(jj)),'.DAT'];
-                
-            elseif re(ii)<10 && tau_c(jj)>=10
-                newExpr{1} = ['wc_file 1D ../data/wc/WC_r0',num2str(re(ii)),'_T',num2str(tau_c(jj)),'.DAT'];
-                
-            end
-            
-            
-            
-            
-            edit_INP_DAT_files(templateFolder,newFolder,oldFile,inpNames{ii,jj,kk},oldExpr,newExpr);
-            
+    % now lets write the new solar azimuth angle. Modis defines the azimuth
+    % angle as [0,180] and [-180,0, whereas libradtran defines the azimuth
+    % angle as [0,360]. So we need to make this adjustment
+    if saz<0
+        saz = saz+360;
+    end
+    str = ['phi0 ',num2str(saz),'.0'];
+    
+    if length(str) < length(oldExpr{4})
+        
+        lengthDiff = length(oldExpr{4}) - length(str);
+        for ii = 1:(lengthDiff) % the minus one accounts for the decimal point
+            str = [str,'0'];
         end
+        
+    elseif length(str) > length(oldExpr{4})
+        
+        error('new expression is greater than the old in expression in length')
+        
     end
     
-end
-
-
-
-
+    newExpr{4} = str;
+    
+    
+    % now lets write the cosine of the zentih viewing angle. LibRadTran defines
+    % this as looking down on the earth, measuring upwelling radiation if umu>0
+    % and being on the earth looking up, measuring downwelling radition, if
+    % umu<0. If umu is 0, it implies a device looking horizontally. MODIS
+    % defines the sensor zenith angle to be between 0 and 180, where 0 is at
+    % zenith. This is equivelant to the libradtran method since cos(0)=1
+    % implies a device looking down. A sensor zenith of 180 implies looking up,
+    % and cos(180) = -1, which is the same definition libradtran uses.
+    
+    if umu==1 || umu==-1 || umu==0
+        str = ['umu ',num2str(umu),'.0'];
+    else
+        str = ['umu ',num2str(umu)];
+    end
+    
+    if length(str) < length(oldExpr{5})
+        
+        lengthDiff = length(oldExpr{5}) - length(str);
+        for ii = 1:(lengthDiff) % the minus one accounts for the decimal point
+            str = [str,'0'];
+        end
+        
+    elseif length(str) > length(oldExpr{5})
+        
+        % if the new string is greater than the old, we will assume there are
+        % zeros at the end that can be delted, or that the extra precision is
+        % not neccessary
+        lengthDiff = length(str) - length(oldExpr{5});
+        
+        str = str(1:(end-lengthDiff));
+        
+        
+    end
+    
+    newExpr{5} = str;
+    
+    % now lets write the azimuth viewing angle. Modis defines the azimuth
+    % angle as [0,180] and [-180,0], whereas libradtran defines the azimuth
+    % angle as [0,360]. So we need to make this adjustment
+    
+    if phi<0
+        phi = phi+360;
+    end
+    
+    str = ['phi ',num2str(phi),'.0'];
+    
+    if length(str) < length(oldExpr{6})
+        
+        lengthDiff = length(oldExpr{6}) - length(str);
+        for ii = 1:(lengthDiff) % the minus one accounts for the decimal point
+            str = [str,'0'];
+        end
+        
+    elseif length(str) > length(oldExpr{6})
+        
+        error('new expression is greater than the old in expression in length')
+        
+    end
+    
+    newExpr{6} = str;
+    
+    
+    
+    
+    % create the begining of the file name string
+    fileBegin = ['pixel_',num2str(pixel_row(pp)),'r_',num2str(pixel_col(pp)),'c_sza_',num2str(sza),'_saz_',num2str(saz),'_band_'];
+    
+    
+    for bb = 1: length(bands2run)
+        
+        modis_band_num = inputs.bands2run(bb);
+        
+        % create the new expression for the wavelength band of interest
+        if bb<=2
+            str = ['wavelength ',num2str(modis.EV.m250.bands.lowerBound(bb)),'.0 ',...
+                num2str(modis.EV.m250.bands.upperBound(bb)),'.0'];
+        elseif bb>2
+            str = ['wavelength ',num2str(modis.EV.m500.bands.lowerBound(bb-2)),'.0 ',...
+                num2str(modis.EV.m500.bands.upperBound(bb-2)),'.0'];
+        end
+        
+        if length(str) < length(oldExpr{2})
+            
+            lengthDiff = length(oldExpr{2}) - length(str);
+            for ii = 1:(lengthDiff) % the minus one accounts for the decimal point
+                str = [str,'0'];
+            end
+            
+        elseif length(str) > length(oldExpr{2})
+            
+            error('new expression is greater than the old in expression in length')
+            
+        end
+        
+        newExpr{2} = str;
+        
+        % now lets step through radius values
+        
+        for rr = 1:length(re)
+            
+            % now lets step through tau values
+            
+            for tt = 1:length(tau_c)
+                
+                % redefine the old file each time
+                inpNames{pp,rr,tt,bb} = [fileBegin,num2str(modis_band_num),'_r_',num2str(re(rr)),'_T_',num2str(tau_c(tt)),'.INP'];
+                
+                % lets define the new expressions to substitute the old ones
+                
+                if re(rr)<10 && tau_c(tt)<10
+                    newExpr{1} = ['wc_file 1D ../data/wc/WC_r0',num2str(re(rr)),'_T0',num2str(tau_c(tt)),'.DAT'];
+                    
+                elseif re(rr)>=10 && tau_c(tt)<10
+                    newExpr{1} = ['wc_file 1D ../data/wc/WC_r',num2str(re(rr)),'_T0',num2str(tau_c(tt)),'.DAT'];
+                    
+                elseif re(rr)>=10 && tau_c(tt)>=10
+                    newExpr{1} = ['wc_file 1D ../data/wc/WC_r',num2str(re(rr)),'_T',num2str(tau_c(tt)),'.DAT'];
+                    
+                elseif re(rr)<10 && tau_c(tt)>=10
+                    newExpr{1} = ['wc_file 1D ../data/wc/WC_r0',num2str(re(rr)),'_T',num2str(tau_c(tt)),'.DAT'];
+                    
+                end
+                
+                
+                % ------ THIS WONT RUN IN PARALELL -----
+                % because we are passing temporary variables out of the
+                % loop and into this function below. This is not allowed in
+                % parfor 
+                
+                edit_INP_DAT_files(templateFolder,newFolder,oldFile,inpNames{pp,rr,tt,bb},oldExpr,newExpr);
+                
+            end
+        end
+        
+    end
+    
+    
+    
+    
 end
 
 
