@@ -11,7 +11,7 @@
 
 %%
 
-function [inpNames] = write_INP_4_MODIS_hdf(inputs,pixels2use,modis)
+function [inpNames,pixels2use] = write_INP_4_MODIS_hdf(inputs,pixels2use,modis)
 
 
 % what computer are we using?
@@ -214,12 +214,12 @@ for pp = 1:length(pixel_row)
         modis_band_num = inputs.bands2run(bb);
         
         % create the new expression for the wavelength band of interest
-        if bb<=2
-            str = ['wavelength ',num2str(modis.EV.m250.bands.lowerBound(bb)),'.0 ',...
-                num2str(modis.EV.m250.bands.upperBound(bb)),'.0'];
-        elseif bb>2
-            str = ['wavelength ',num2str(modis.EV.m500.bands.lowerBound(bb-2)),'.0 ',...
-                num2str(modis.EV.m500.bands.upperBound(bb-2)),'.0'];
+        if modis_band_num<=2
+            str = ['wavelength ',num2str(modis.EV.m250.bands.lowerBound(modis_band_num)),'.0 ',...
+                num2str(modis.EV.m250.bands.upperBound(modis_band_num)),'.0'];
+        elseif modis_band_num>2
+            str = ['wavelength ',num2str(modis.EV.m500.bands.lowerBound(modis_band_num-2)),'.0 ',...
+                num2str(modis.EV.m500.bands.upperBound(modis_band_num-2)),'.0'];
         end
         
         if length(str) < length(oldExpr{2})

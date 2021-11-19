@@ -40,7 +40,7 @@ inputFileNames = names.inp;
 outputFileNames = names.out;
 
 
-R = cell(size(inputFileNames)); % each value here is integrated over the band provided
+R = zeros(size(inputFileNames)); % each value here is integrated over the band provided
 Rl = cell(size(inputFileNames)); % each value here is the spectral reflectance over the entire band
 
 
@@ -86,7 +86,7 @@ for pp = 1:size(inputFileNames,1)
                 [pp,rr,tt,bb]
 
                 [ds{tt},~,~] = readUVSPEC(inp_folder,outputFileNames{pp,rr,tt,bb},inputSettings(tt+1,:)); % headers don't change per iteration
-                [R{pp,rr,tt,bb},Rl{pp,rr,tt,bb}] = reflectanceFunction(inputSettings(tt+1,:),ds{tt});
+                [R(pp,rr,tt,bb),Rl{pp,rr,tt,bb}] = reflectanceFunction(inputSettings(tt+1,:),ds{tt});
                 
             end
             
@@ -100,7 +100,7 @@ for pp = 1:size(inputFileNames,1)
 end
 
 % save the relfectance calculation
-save(saveCalcs_filename,"R","Rl","inputSettings",'-append'); % save inputSettings to the same folder as the input and output file
+save(saveCalcs_filename,"R","Rl",'-append'); % save inputSettings to the same folder as the input and output file
         
 
 
