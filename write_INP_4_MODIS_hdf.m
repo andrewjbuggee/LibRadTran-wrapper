@@ -248,14 +248,15 @@ for pp = 1:length(pixel_row)
                 % redefine the old file each time
                 inpNames{pp,rr,tt,bb} = [fileBegin,num2str(modis_band_num),'_r_',num2str(re(rr)),'_T_',num2str(tau_c(tt)),'.INP'];
                 
-                % lets define the new expressions to substitute the old ones
+                
+                                % lets define the new expressions to substitute the old ones
                 
                 if re(rr)<10 && tau_c(tt)<10
                     newExpr{1} = ['wc_file 1D ../data/wc/WC_r0',num2str(re(rr)),'_T0',num2str(tau_c(tt)),'.DAT'];
                     
                 elseif re(rr)>=10 && tau_c(tt)<10
                     newExpr{1} = ['wc_file 1D ../data/wc/WC_r',num2str(re(rr)),'_T0',num2str(tau_c(tt)),'.DAT'];
-                    
+                  
                 elseif re(rr)>=10 && tau_c(tt)>=10
                     newExpr{1} = ['wc_file 1D ../data/wc/WC_r',num2str(re(rr)),'_T',num2str(tau_c(tt)),'.DAT'];
                     
@@ -263,6 +264,10 @@ for pp = 1:length(pixel_row)
                     newExpr{1} = ['wc_file 1D ../data/wc/WC_r0',num2str(re(rr)),'_T',num2str(tau_c(tt)),'.DAT'];
                     
                 end
+
+                
+                
+              
                 
                 
                 % ------ THIS WONT RUN IN PARALELL -----
