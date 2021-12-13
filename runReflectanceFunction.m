@@ -39,6 +39,8 @@ saveCalcs_filename = inputs.saveCalculations_fileName;
 inputFileNames = names.inp;
 outputFileNames = names.out;
 
+length_tau = size(outputFileNames,3);
+
 
 R = zeros(size(inputFileNames)); % each value here is integrated over the band provided
 Rl = cell(size(inputFileNames)); % each value here is the spectral reflectance over the entire band
@@ -52,7 +54,7 @@ for pp = 1:size(inputFileNames,1)
         
         
         % next step through the different values for r per band
-        for rr = 1:size(inputFileNames,2)
+        parfor rr = 1:size(inputFileNames,2)
             
             
             % if pp==1 && bb ==1 && rr == 1
@@ -80,8 +82,13 @@ for pp = 1:size(inputFileNames,1)
             
             ds = cell(1,length(outputFileNames(pp,rr,:,bb)));
             
+            % --- IMPORTANT ----
+            % for the for loop to run, we must define the range of the
+            % forloop using a fixed value outside of the parfor loop. The
+            % range cannot be defined by calling a sliced variable
+            
             % Finally, step through the different values of optical thickness
-            for tt = 1:length(outputFileNames(pp,rr,:,bb))
+            for tt = 1:length_tau
                 
                 [pp,rr,tt,bb]
 
@@ -100,7 +107,7 @@ for pp = 1:size(inputFileNames,1)
 end
 
 % save the relfectance calculation
-save(saveCalcs_filename,"R","Rl",'-append'); % save inputSettings to the same folder as the input and output file
+save(saveCalcs_filename,"R",'-append'); % save inputSettings to the same folder as the input and output file
         
 
 
