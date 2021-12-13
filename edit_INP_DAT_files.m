@@ -66,7 +66,7 @@ elseif iscell(newExpr)==true
     elseif length(oldExpr) ~= length(newExpr)
         
         
-        error('The length of the old expressions doesnt equal the length of the new expressions')
+        error('The number of old expressions doesnt equal the number of new expressions')
         
     end
     
