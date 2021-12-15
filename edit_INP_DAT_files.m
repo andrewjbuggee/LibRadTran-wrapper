@@ -55,6 +55,9 @@ elseif iscell(newExpr)==true
         [~,endI] = regexp(oldText,oldExpr{ii},'match'); % find the old expression location
         
         % replace old expression with new expression
+        
+        % check out the following example that can add strings to lines
+        % (https://www.mathworks.com/matlabcentral/answers/122189-how-to-edit-a-text-file-using-matlab)
         oldText(endI:(endI+length(oldExpr{ii})-1)) = newExpr{ii}; % insert new expression
         
         end

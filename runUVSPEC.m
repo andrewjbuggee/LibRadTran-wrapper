@@ -78,7 +78,7 @@ if numFiles2Run==1
     index4_space2 = regexp(match4{1},'[0123456789]\s+'); % find a space that comes after a number
     
     index5_space1 = regexp(match5{1},'\s[0123456789]+'); % There is only 1 value for the solar zenith angle
-    index5_space2 = regexp(match5{1},'[0123456789]\s+'); % find a space that comes after a number
+    index5_space2 = regexp(match5{1},'[0123456789]\s+'); % find a space that comes after a number - but since the varaible name, phi0, ends in a 0, we have to manually choose the second space
     
     index6_space1 = regexp(match6{1},'\s[0123456789]+'); % There is only 1 value for the solar zenith angle
     index6_space2 = regexp(match6{1},'[0123456789]\s+'); % find a space that comes after a number
@@ -118,7 +118,7 @@ if numFiles2Run==1
     sza = str2double(sza);
     
     % find the solar azimuth angle
-    saz = match5{1}(index5_space1+1:index5_space2);
+    saz = match5{1}(index5_space1+1:index5_space2(2));
     saz = str2double(saz);
     
     % find the sensor altitude

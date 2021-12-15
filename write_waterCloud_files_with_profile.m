@@ -6,7 +6,7 @@
 % By Andrew J. Buggee
 %%
 
-function [] = write_waterCloud_files_with_profile(r_top,r_bottom,tau_c,profile_type)
+function [newFile] = write_waterCloud_files_with_profile(r_top,r_bottom,tau_c,profile_type)
 
 % determine what computer is being used in order to find the water cloud
 % folder
@@ -57,7 +57,7 @@ if strcmp(profile_type,'adiabatic')
     re_z = (b0 + b1 * (z-z0)./h).^(1/3); % droplet profile in geometric coordniate system for an adiabatic cloud
     
     % libRadTran requires liquid water content, but we want to enforce a
-    % tau_c over the cloud. So we calculate what the total liquid water
+    % tau_c_str over the cloud. So we calculate what the total liquid water
     % content using the tau that was input by the user
     rho_liquid_water = 10^6; % grams/m^3 - density of liquid water
     lwc_top = 2/3 * rho_liquid_water * tau_c * (r_top/10^6)/h; % g/m^3 - total liquid water content, which is the value at the top of the cloud, since r is the largest
@@ -72,23 +72,30 @@ if strcmp(profile_type,'adiabatic')
     lwc = c0 + c1*(z-z0)./h; % g/m^3 - lwc profile as a function of geometric height
     
     % create the new file name
+    r_bottom_round = round(r_bottom);
+    r_top_round = round(r_top);
+    tau_c_round = round(tau_c);
     
-    if r_bottom<10 && r_top<10 && tau_c<10
-        newFile = ['WC_profile_',profile_type,'_rbot0',num2str(r_bottom),'_rtop0',num2str(r_top),'_T0',num2str(tau_c),'.DAT'];
-    elseif r_bottom<10 && r_top<10 && tau_c>=10
-        newFile = ['WC_profile_',profile_type,'_rbot0',num2str(r_bottom),'_rtop0',num2str(r_top),'_T',num2str(tau_c),'.DAT'];
-    elseif r_bottom<10 && r_top>=10 && tau_c<10
-        newFile = ['WC_profile_',profile_type,'_rbot0',num2str(r_bottom),'_rtop',num2str(r_top),'_T0',num2str(tau_c),'.DAT'];
-    elseif r_bottom<10 && r_top>=10 && tau_c>=10
-        newFile = ['WC_profile_',profile_type,'_rbot0',num2str(r_bottom),'_rtop',num2str(r_top),'_T',num2str(tau_c),'.DAT'];
-    elseif r_bottom>=10 && r_top<10 && tau_c<10
-        newFile = ['WC_profile_',profile_type,'_rbot',num2str(r_bottom),'_rtop0',num2str(r_top),'_T0',num2str(tau_c),'.DAT'];
-    elseif r_bottom>=10 && r_top<10 && tau_c>=10
-        newFile = ['WC_profile_',profile_type,'_rbot',num2str(r_bottom),'_rtop0',num2str(r_top),'_T',num2str(tau_c),'.DAT'];
-    elseif r_bottom>=10 && r_top>=10 && tau_c<10
-        newFile = ['WC_profile_',profile_type,'_rbot',num2str(r_bottom),'_rtop',num2str(r_top),'_T0',num2str(tau_c),'.DAT'];
-    elseif r_bottom>=10 && r_top>=10 && tau_c>=10
-        newFile = ['WC_profile_',profile_type,'_rbot',num2str(r_bottom),'_rtop',num2str(r_top),'_T',num2str(tau_c),'.DAT'];
+    r_bottom_str = num2str(r_bottom_round);
+    r_top_str = num2str(r_top_round);
+    tau_c_str = num2str(tau_c_round);
+    
+    if r_bottom_round<10 && r_top_round<10 && tau_c_round<10
+        newFile = ['WC_profile_',profile_type,'_rbot0',r_bottom_str,'_rtop0',r_top_str,'_T0',tau_c_str,'.DAT'];
+    elseif r_bottom_round<10 && r_top_round<10 && tau_c_round>=10
+        newFile = ['WC_profile_',profile_type,'_rbot0',r_bottom_str,'_rtop0',r_top_str,'_T',tau_c_str,'.DAT'];
+    elseif r_bottom_round<10 && r_top_round>=10 && tau_c_round<10
+        newFile = ['WC_profile_',profile_type,'_rbot0',r_bottom_str,'_rtop',r_top_str,'_T0',tau_c_str,'.DAT'];
+    elseif r_bottom_round<10 && r_top_round>=10 && tau_c_round>=10
+        newFile = ['WC_profile_',profile_type,'_rbot0',r_bottom_str,'_rtop',r_top_str,'_T',tau_c_str,'.DAT'];
+    elseif r_bottom_round>=10 && r_top_round<10 && tau_c_round<10
+        newFile = ['WC_profile_',profile_type,'_rbot',r_bottom_str,'_rtop0',r_top_str,'_T0',tau_c_str,'.DAT'];
+    elseif r_bottom_round>=10 && r_top_round<10 && tau_c_round>=10
+        newFile = ['WC_profile_',profile_type,'_rbot',r_bottom_str,'_rtop0',r_top_str,'_T',tau_c_str,'.DAT'];
+    elseif r_bottom_round>=10 && r_top_round>=10 && tau_c_round<10
+        newFile = ['WC_profile_',profile_type,'_rbot',r_bottom_str,'_rtop',r_top_str,'_T0',tau_c_str,'.DAT'];
+    elseif r_bottom_round>=10 && r_top_round>=10 && tau_c_round>=10
+        newFile = ['WC_profile_',profile_type,'_rbot',r_bottom_str,'_rtop',r_top_str,'_T',tau_c_str,'.DAT'];
         
     end
     
@@ -102,23 +109,17 @@ if strcmp(profile_type,'adiabatic')
         num = round(lwc(xx),5);
         a = floor(num);
         b = num-a; % this tells us if our number is a fraction, or a whole number
+        c = str2double(num2str(num)); % special case where num2str rounds up, but a is a whole integer diferrent
+        
         if b==0
             newExpr_lwc = [num2str(num),'.0']; % if true, then there is no deicaml point in our string
-        else
-            
-            newExpr_lwc = num2str(num);
-        end
-        
-        % lets create the droplet size string
-        % first lets check to see if there is a decimal point in our string
-        num = round(re_z(xx),5);
-        a = floor(num);
-        b = num-a; % this tells us if our number is a fraction, or a whole number
-        if b==0
+        elseif (c-a)==1
+            % if this is true, then we need to add a decimal point because
+            % num2str rounded off and removed it
             newExpr_re = [num2str(num),'.0']; % if true, then there is no deicaml point in our string
         else
             
-            newExpr_re = num2str(num);
+            newExpr_lwc = num2str(num);
         end
         
         % for LWC, we get 5 significant digits, or a string length of 6
@@ -140,6 +141,32 @@ if strcmp(profile_type,'adiabatic')
             error('String you are trying to write doesnt exist')
         end
         
+        % lets check to make sure the LWC is within an acceptable range
+        if str2double(newExpr_lwc)<0 || str2double(newExpr_lwc)>10
+            
+            disp([newline,'lwc_string value: ',newExpr_lwc,'. Layer: ',num2str(xx)])
+            error('The value for lwc is either negative or far too large! Something happened when converting to a string')
+        end
+        
+        % lets create the droplet size string
+        % first lets check to see if there is a decimal point in our string
+        num = round(re_z(xx),5);
+        a = floor(num);
+        b = num-a; % this tells us if our number is a fraction, or a whole number
+        c = str2double(num2str(num)); % special case where num2str rounds up, but a is a whole integer diferrent
+        if b==0
+            newExpr_re = [num2str(num),'.0']; % if true, then there is no deicaml point in our string
+        elseif (c-a)==1
+            % if this is true, then we need to add a decimal point because
+            % num2str rounded off and removed it
+            newExpr_re = [num2str(num),'.0']; % if true, then there is no deicaml point in our string
+            
+        else
+            
+            newExpr_re = num2str(num);
+        end
+        
+        
         
         % --- check the length of the droplet size string ---
         
@@ -155,6 +182,17 @@ if strcmp(profile_type,'adiabatic')
             
         elseif isempty(newExpr_re) == true
             error('String you are trying to write doesnt exist')
+        end
+        
+        % quickly check the value, and make sure it is within the bounds of
+        % the acceptable droplet sizes for the Hu and Stamnes
+        % parameterization
+        
+        
+        if str2double(newExpr_re)<2.5 || str2double(newExpr_re)>60
+            
+            disp([newline,'re_string value: ',newExpr_re,'. Layer: ',num2str(xx)])
+            error('The value for r_e is too large! Something happened when converting to a string')
         end
         
         

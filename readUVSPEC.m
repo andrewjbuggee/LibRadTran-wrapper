@@ -49,7 +49,8 @@ elseif numFiles2Read>1
     
 else
     
-    error('There is something wrong with the number of files im supposed to read')
+    error('There are no files to read! Check .OUT files to see if it ran properly')
+    
     
 end
 
