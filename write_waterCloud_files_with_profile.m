@@ -192,7 +192,7 @@ if strcmp(profile_type,'adiabatic')
         if str2double(newExpr_re)<2.5 || str2double(newExpr_re)>60
             
             disp([newline,'re_string value: ',newExpr_re,'. Layer: ',num2str(xx)])
-            error('The value for r_e is too large! Something happened when converting to a string')
+            error('The value for r_e is either too small or too large! Something happened when converting to a string')
         end
         
         
