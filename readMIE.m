@@ -18,7 +18,7 @@
 % --- By Andrew J. Buggee ---
 %% --- Read in Files ---
 
-function [dataStruct,headers] = readMIE(path,fileName)
+function [dataStruct,headers,num_radii] = readMIE(path,fileName)
 
 % How many files do we need to read?
 
@@ -95,25 +95,57 @@ headers{8} = 'pmon';
 % and now we'll create the structure
 % we'll start by creating the wavelength vector
 
+% Lets make sure we know how many different radii have been calculated
+index = data(1,1)==data(:,1); % how many repeats of the first wavelength are there?
 
+num_radii = sum(index); % this is the number of different radii computed by the mie cod
+
+
+% parse through the data
+
+ for rr = 1:num_radii
+            
+       index_radii = (rr:num_radii:size(data,1))'; % index to pull out calculations with a constant radius
+         
+       if rr ==1
+           wavelength = data(index_radii,1); % grab the wavelength values
+           refrac_real = data(index_radii,2); % grab the real part of the refractive index
+           refrac_imag = data(index_radii,3); % grab the imagniary part of the refractive index
+       end
+       
+       qext(:,rr) = data(index_radii,4); % grab the extinction efficiency
+       ssa(:,rr) = data(index_radii,5); % grab the single scattering albedo
+       asy(:,rr) = data(index_radii,6); % grab the assymmetry parameter
+       
+ end
+       
 
 if numFiles2Read==1
     % if we have to zenith view angles, then only irradiance is
     % calculated
     
-    if size(data,2) == 7
+    if size(data,2) == 6
         
-        dataStruct = struct(headers{1},data(:,1),...
-            headers{2},data(:,2),headers{3},data(:,3),...
-            headers{4},data(:,4),headers{5},data(:,5),...
-            headers{6},data(:,6),headers{1,7},data(:,7));
+       
+        
+        dataStruct = struct(headers{1},wavelength,...
+            headers{2},refrac_real,headers{3},refrac_imag,...
+            headers{4},qext,headers{5},ssa,...
+            headers{6},asy);
+        
+    elseif size(data,2) == 7
+        
+        dataStruct = struct(headers{1},wavelength,...
+            headers{2},refrac_real,headers{3},refrac_imag,...
+            headers{4},qext,headers{5},ssa,...
+            headers{6},asy,headers{1,7},data(:,7));
         
     elseif size(data,2) == 8
         
-        dataStruct = struct(headers{1},data(:,1),...
-            headers{2},data(:,2),headers{3},data(:,3),...
-            headers{4},data(:,4),headers{5},data(:,5),...
-            headers{6},data(:,6),headers{1,7},data(:,7),...
+        dataStruct = struct(headers{1},wavelength,...
+            headers{2},refrac_real,headers{3},refrac_imag,...
+            headers{4},qext,headers{5},ssa,...
+            headers{6},asy,headers{1,7},data(:,7),...
             headers{1,8},data(:,8));
         
         
