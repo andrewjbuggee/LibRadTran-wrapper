@@ -7,7 +7,7 @@
 %%
 
 
-function scat_cross_section = compute_scat_cross_section(r_eff,wavelength)
+function [ext_coeff] = compute_scat_cross_section(r_eff,wavelength,lwc)
 
 % ensure that both inputs are positive
 if sum(r_eff<0)>0
@@ -38,10 +38,11 @@ wavelen = ncread(mie_fileName,'wavelen');
 % ------------------------------------------------------------------
 
 
-den = 10^6; % g/m^3 - density of liquid water
+
+%lwc = 0.2; % g/m^3 - liquid water content
 
 % change units to m^(-1)
-ext = ext.*den .*(1/1000); % m^(-1) - extinction coefficient
+ext = ext.*lwc .*(1/1000); % m^(-1) - extinction coefficient
 
 % ----- create mesh grids for wavelenth and effective radius grid for the lookup table ------
 
