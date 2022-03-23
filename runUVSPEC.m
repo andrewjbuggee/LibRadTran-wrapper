@@ -134,7 +134,7 @@ if numFiles2Run==1
         
         if strcmp(zout_str,'toa')==true
             zout = 100;
-        elseif strcmp(zout_str,'boa')==true
+        elseif strcmp(zout_str,'sur')==true
             zout = 0;
         end
     end

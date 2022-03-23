@@ -367,10 +367,16 @@ if strcmp(rte_solver,'disort')==true
             % if we have to zenith view angles, then only irradiance is
             % calculated
             
-            dataStruct = struct(irrad_headers_units{1,2},data(:,2),...
-                irrad_headers_units{1,3},data(:,3),irrad_headers_units{1,4},data(:,4),...
-                irrad_headers_units{1,5},data(:,5),irrad_headers_units{1,6},data(:,6),...
-                irrad_headers_units{1,7},data(:,7),irrad_headers_units{1,8},data(:,8));
+            rad_headers_units = cell(2,2);
+            rad_headers_units{1,1} = 'azAvgRad';
+            rad_headers_units{1,2} = 'rad-umu-phi';
+            rad_headers_units{2,1} = 'mW/(m^{2} nm sr)';
+            rad_headers_units{2,2} = 'mW/(m^{2} nm sr)';
+            
+            dataStruct = struct(irrad_headers_units{1,2},irradianceData(:,2),...
+                irrad_headers_units{1,3},irradianceData(:,3),irrad_headers_units{1,4},irradianceData(:,4),...
+                irrad_headers_units{1,5},irradianceData(:,5),irrad_headers_units{1,6},irradianceData(:,6),...
+                irrad_headers_units{1,7},irradianceData(:,7),irrad_headers_units{1,8},irradianceData(:,8));
             
             dataStruct.wavelength = wavelength;
             

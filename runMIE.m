@@ -223,15 +223,31 @@ end
 
 
 
-
-
 % --- Now we Can Run the Files ----
 
 
 % --- Point to locaiton of uvspec program ---
-mie_folderName = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/'...
-    'Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
-    'LibRadTran/libRadtran-2.0.4/bin/'];
+% To run mie in the command line we have to point to its full location.
+% To do this we will check to see what computer we are using
+
+usrName = whatComputer;
+
+if strcmp('anbu8374',usrName)
+    
+        mie_folderName = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/bin/';
+    
+elseif strcmp('andrewbuggee',usrName)
+    
+    mie_folderName = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/'...
+                    'Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
+                    'LibRadTran/libRadtran-2.0.4/bin/'];
+    
+else 
+    
+    error('I dont know where the uvspec function is! Tell me what folder its in, please')
+    
+end
+
 
 % using the function 'system' runs commans in the terminal window
 cmnd1 = ['cd ', folderName];

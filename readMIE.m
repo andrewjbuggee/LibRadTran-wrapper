@@ -80,13 +80,13 @@ end
 
 headers = cell(1,8);
 headers{1} = 'wavelength';
-headers{2} = 'refrac_real';
-headers{3} = 'refrac_imag';
-headers{4} = 'Qext';
-headers{5} = 'ssa';
-headers{6} = 'asymParam';
-headers{7} = 'spike';
-headers{8} = 'pmon';
+headers{2} = 'r_eff';
+headers{3} = 'refrac_real';
+headers{4} = 'refrac_imag';
+headers{5} = 'Qext';
+headers{6} = 'ssa';
+headers{7} = 'asymParam';
+headers{8} = 'Qsca';
 
 
 
@@ -109,13 +109,15 @@ num_radii = sum(index); % this is the number of different radii computed by the 
          
        if rr ==1
            wavelength = data(index_radii,1); % grab the wavelength values
-           refrac_real = data(index_radii,2); % grab the real part of the refractive index
-           refrac_imag = data(index_radii,3); % grab the imagniary part of the refractive index
+           r_eff = data(1:num_radii,2);         % grab the values for effective radii
+           refrac_real = data(index_radii,3); % grab the real part of the refractive index
+           refrac_imag = data(index_radii,4); % grab the imagniary part of the refractive index
        end
        
-       qext(:,rr) = data(index_radii,4); % grab the extinction efficiency
-       ssa(:,rr) = data(index_radii,5); % grab the single scattering albedo
-       asy(:,rr) = data(index_radii,6); % grab the assymmetry parameter
+       qext(:,rr) = data(index_radii,5); % grab the extinction efficiency
+       ssa(:,rr) = data(index_radii,6); % grab the single scattering albedo
+       asy(:,rr) = data(index_radii,7); % grab the assymmetry parameter
+       qsca(:,rr) = data(index_radii,8); % grab the assymmetry parameter
        
  end
        
@@ -128,25 +130,23 @@ if numFiles2Read==1
         
        
         
-        dataStruct = struct(headers{1},wavelength,...
-            headers{2},refrac_real,headers{3},refrac_imag,...
-            headers{4},qext,headers{5},ssa,...
-            headers{6},asy);
+        dataStruct = struct(headers{1},wavelength, headers{2}, r_eff,...
+            headers{3},refrac_real,headers{4},refrac_imag,...
+            headers{5},qext,headers{6},ssa); 
         
     elseif size(data,2) == 7
         
-        dataStruct = struct(headers{1},wavelength,...
-            headers{2},refrac_real,headers{3},refrac_imag,...
-            headers{4},qext,headers{5},ssa,...
-            headers{6},asy,headers{1,7},data(:,7));
+        dataStruct = struct(headers{1},wavelength, headers{2}, r_eff,...
+            headers{3},refrac_real,headers{4},refrac_imag,...
+            headers{5},qext,headers{6},ssa,...
+            headers{7},asy); 
         
     elseif size(data,2) == 8
         
-        dataStruct = struct(headers{1},wavelength,...
-            headers{2},refrac_real,headers{3},refrac_imag,...
-            headers{4},qext,headers{5},ssa,...
-            headers{6},asy,headers{1,7},data(:,7),...
-            headers{1,8},data(:,8));
+        dataStruct = struct(headers{1},wavelength, headers{2}, r_eff,...
+            headers{3},refrac_real,headers{4},refrac_imag,...
+            headers{5},qext,headers{6},ssa,...
+            headers{7},asy,headers{8},qsca); 
         
         
     end
