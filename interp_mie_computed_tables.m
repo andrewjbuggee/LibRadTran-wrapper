@@ -15,6 +15,13 @@
 %   wavelength first and then the radius. The wavelength should be in
 %   nanometers and the radius should be in microns. Sorry!
 
+%   (3) justQ_flag - tells the code you only need Qext - The entire
+%   Mie_Properties file is 29 MB, which takes a while to load! To write 10
+%   wc files, reading in the Mie_Properties file 10 times, it takes 8
+%   seconds. But most of the time we only need Qext, so there is a file for
+%   both the monodispersed and the gamma distribution that contains only
+%   the computed values for Qext, which is just 2.9 MB.
+
 % OUTPUTS:
 %   (1) yq - the values of each mie parameter interpolated at the locations
 %   specified by xq. The parameters calculated in the look up table are:
@@ -33,7 +40,7 @@
 % ------------------------------------------------------------------------
 %%
 
-function [yq] = interp_mie_computed_tables(xq,distribution)
+function [yq] = interp_mie_computed_tables(xq,distribution, justQ_flag)
 
 % ----------------------------------------
 % ------------- Check Inputs! ------------
@@ -42,8 +49,10 @@ function [yq] = interp_mie_computed_tables(xq,distribution)
 % Check to make sure there are two inputs
 
 
-if nargin~=2
-    error([newline,'Not enough inputs. Need 2: 1 defines the query points, the other chooses the file type', newline])
+if nargin~=3
+    error([newline,'Not enough inputs. Need 3: the first defines the query points, ',...
+        'the next chooses the droplet size distribution, and the last tells the code to load ',...
+        'the entire Mie_Properties table, or just the Q_ext values.', newline])
 end
 
 % Check to make sure xq is a vector with two values
@@ -65,8 +74,7 @@ if strcmp(computer_name,'anbu8374')==true
     folder_path = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/Mie_Calculations/';
     
 elseif strcmp(computer_name,'andrewbuggee')==true
-    
-    error('You havent stored the mie calculations on you laptop yet!')
+    folder_path = '/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/LibRadTran/libRadtran-2.0.4/Mie_Calculations/';
     
 end
 
@@ -100,19 +108,24 @@ if strcmp(distribution, 'gamma')==true
     % Let's load the mie compute look-up table for a gamma droplet
     % distribution
     
-    delimeter = ' ';
-    headerLine = 0; % 0 if no header
+    
+    if justQ_flag==true
+        filename = 'Q_ext_4_AVIRIS_1nm_sampling_gamma_7.txt';
+    else
+        filename = 'Mie_Properties_4_AVIRIS_1nm_sampling_gamma_7.OUT';
+    end
     
     
+    % ----- READ IN DATA USING TEXTSCAN() ---------------
     
-    gamma_filename = 'Q_ext_4_AVIRIS_1nm_sampling_gamma_7.OUT';
+    file_id = fopen([folder_path,filename]);
     
-    data = importdata([folder_path,gamma_filename],delimeter,headerLine);
-    data = reshape(data',8, 100, []);                                       % converts to data cube (row,col,depth) = (parameters,r_eff, lambda)
+    format_spec = '%f %f %f %f %f %f %f %f';        % 8 columns of data
     
+    data = textscan(file_id, format_spec);
     
     % Set up the zero array
-    yq = zeros(1,8);
+    yq = zeros(1,size(data,1)-2);                                           % The first two rows are not needed
     
     
     % ------------------------------------------------------------
@@ -133,11 +146,11 @@ if strcmp(distribution, 'gamma')==true
         
         % then we will interpoalte
         % Lets grab all of the values we need in the data set
-           for nn = 1:num_calcs
+        for nn = 1:num_calcs
             
-            for ii = 1:(size(data,1)-2)                         % The first two values are wavelength and effective radius
+            for ii = 3:length(data)                         % The first two values are wavelength and effective radius
                 
-                data2interpolate = reshape(data(ii+2,:,:), 100,[]);
+                data2interpolate = reshape(data{ii}, 100,[]);
                 yq(nn,ii) = interp2(WL, R_eff, data2interpolate, xq(nn,1), xq(nn,2));
                 
             end
@@ -152,7 +165,6 @@ if strcmp(distribution, 'gamma')==true
         
         
     end
-    
     
     
     
@@ -161,56 +173,119 @@ elseif strcmp(distribution, 'mono')==true
     % Let's load the mie compute look-up table for a monodispersed droplet
     % distribution
     
-    delimeter = ' ';
-    headerLine = 0; % 0 if no header
     
     
-    
-    mono_filename = 'Q_ext_4_AVIRIS_1nm_sampling_monodispersed.OUT';
-    
-    data = importdata([folder_path,mono_filename],delimeter,headerLine);
-    data = reshape(data',8, 100, []);                                       % converts to data cube (row,col,depth) = (parameters,r_eff, lambda)
-    
-    % Set up the zero array
-    yq = zeros(1,size(data,1)-2);                                           % The first two rows are not needed
-    
-    if any(xq(:,1)<= wavelength_bounds(1)) || any(xq(:,1)>=wavelength_bounds(2)) || any(xq(:,2) <= r_eff_bounds(1)) || any(xq(:,2) >= r_eff_bounds(2))
+    if justQ_flag==true
         
-        % if any of these are true, then we will extrapolate
-        error(['Query points are outside the bounds of the data set. The acceptable ranges are:',newline,...
-            'Wavelength: [100, 3000] nm', newline,...
-            'Effective Radius: [1, 100] microns', newline]);
+        % if this is true, we only load the Q_ext calculations!
+        filename = 'Q_ext_4_AVIRIS_1nm_sampling_monodispersed.txt';
+        format_spec = '%f';        % 1 column of data
         
-    else
         
-        % then we will interpoalte
-        % Lets grab all of the values we need in the data set
-        for nn = 1:num_calcs
+        
+        % ----- READ IN DATA USING TEXTSCAN() ---------------
+        
+        file_id = fopen([folder_path,filename]);
+        
+        data = textscan(file_id, format_spec);
+        data = reshape(data{1},100,[]);                                     % rehsape the data into a matrix
+        % Set up the zero array
+        yq = zeros(1,size(data,1)-2);                                           % The first two rows are not needed
+        
+        
+        if any(xq(:,1)<= wavelength_bounds(1)) || any(xq(:,1)>=wavelength_bounds(2)) || any(xq(:,2) <= r_eff_bounds(1)) || any(xq(:,2) >= r_eff_bounds(2))
             
-            for ii = 1:(size(data,1)-2)                         % The first two values are wavelength and effective radius
+            % if any of these are true, then we will extrapolate
+            error(['Query points are outside the bounds of the data set. The acceptable ranges are:',newline,...
+                'Wavelength: [100, 3000] nm', newline,...
+                'Effective Radius: [1, 100] microns', newline]);
+            
+        else
+            
+            % then we will interpoalte
+            % Lets grab all of the values we need in the data set
+            for nn = 1:num_calcs
                 
-                data2interpolate = reshape(data(ii+2,:,:), 100,[]);
-                yq(nn,ii) = interp2(WL, R_eff, data2interpolate, xq(nn,1), xq(nn,2));
+                    
+                    yq(nn,ii) = interp2(WL, R_eff, data2interpolate, xq(nn,1), xq(nn,2));
+                    
+                
                 
             end
+            
+            % Lets include the wavelength and effective radius in the
+            % interpolated data cube
+            yq = [xq, yq];
+            
             
             
         end
         
-        % Lets include the wavelength and effective radius in the
-        % interpolated data cube
-        yq = [xq, yq];
+    else
+        error([newline,'The distribution you provided is not valid. Enter "gamma" or "mono"',newline])
         
         
         
     end
     
 else
-    error([newline,'The distribution you provided is not valid. Enter "gamma" or "mono"',newline])
     
-    
+    filename = 'Mie_Properties_4_AVIRIS_1nm_sampling_monodispersed.OUT';
+    format_spec = '%f %f %f %f %f %f %f %f';        % 8 columns of data
     
 end
+
+
+% ----- READ IN DATA USING IMPORTDATA() ---------------
+
+
+%     delimeter = ' ';
+%     headerLine = 0; % 0 if no header
+%     data = importdata([folder_path,filename],delimeter,headerLine);
+%     data = reshape(data',8, 100, []);                                       % converts to data cube (row,col,depth) = (parameters,r_eff, lambda)
+%
+%
+%
+%
+%     % Set up the zero array
+%     yq = zeros(1,size(data,1)-2);                                           % The first two rows are not needed
+%
+%     if any(xq(:,1)<= wavelength_bounds(1)) || any(xq(:,1)>=wavelength_bounds(2)) || any(xq(:,2) <= r_eff_bounds(1)) || any(xq(:,2) >= r_eff_bounds(2))
+%
+%         % if any of these are true, then we will extrapolate
+%         error(['Query points are outside the bounds of the data set. The acceptable ranges are:',newline,...
+%             'Wavelength: [100, 3000] nm', newline,...
+%             'Effective Radius: [1, 100] microns', newline]);
+%
+%     else
+%
+%         % then we will interpoalte
+%         % Lets grab all of the values we need in the data set
+%         for nn = 1:num_calcs
+%
+%             for ii = 1:(size(data,1)-2)                         % The first two values are wavelength and effective radius
+%
+%                 data2interpolate = reshape(data(ii+2,:,:), 100,[]);
+%                 yq(nn,ii) = interp2(WL, R_eff, data2interpolate, xq(nn,1), xq(nn,2));
+%
+%             end
+%
+%
+%         end
+%
+%         % Lets include the wavelength and effective radius in the
+%         % interpolated data cube
+%         yq = [xq, yq];
+%
+%
+%
+%     end
+
+
+
+
+
+
 
 
 
