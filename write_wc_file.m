@@ -29,6 +29,13 @@
 %   (nanometers) - This is the wavelength that defines the cloud optical
 %   depth. There should only be one value!
 
+%   (6) distribution_str - a string telling the code with droplet size 
+%   distribution to use  - One can chose from two options:
+%       (a) 'mono' - monodispersed distribution
+%       (b) 'gamma' - gamma droplet distribution. By default this will use
+%       a gamma distribution with an alpha value of 7, which is typical for
+%       liquid water clouds.
+
 % OUTPUTS:
 %   (1) .Dat file saved in the libRadTran folder:
 %   /.../libRadtran-2.0.4/data/wc
@@ -40,7 +47,7 @@
 
 %%
 
-function [] = write_wc_file(re,tau_c,z, H, lambda)
+function [] = write_wc_file(re,tau_c,z, H, lambda, distribution_str)
 
 % ------------------------------------------------------------
 % ---------------------- CHECK INPUTS ------------------------
@@ -50,7 +57,7 @@ function [] = write_wc_file(re,tau_c,z, H, lambda)
 % depth, and the altitude vector associated with this cloud
 
 
-if nargin~=5
+if nargin~=6
     error([newline,'Not enough inputs. Need 5: droplet effective radius, optical depth, altitude',...
         ' geometric thickness and wavelength.', newline])
 end
@@ -88,6 +95,14 @@ if any(re<r_eff_bounds(1)) || any(re>r_eff_bounds(2))
     
 end
 
+% Check to make sure the distribution string is one of two possible values
+
+if strcmp(distribution_str, 'mono')==false && strcmp(distribution_str, 'gamma')==false
+    
+    error([newline,'I dont recognize the droplet distribution. Must be either "mono" or "gamma"', newline])
+end
+
+
 
 % Lets set up a few warnings incase the values of effective radius are
 % outside the bounds of the Hu and Stamnes or Mie Interpolate
@@ -105,7 +120,7 @@ if any(re>25)
         'parameters. The acceptable range for Mie Interpolation is [1, 25] micorns.',newline]);
 end
 
-    
+
 
 
 % Determine which computer you're using
@@ -135,17 +150,28 @@ end
 % This is the only way I can get my estimates of optical depth to match
 % LibRadTrans estimates
 
-rho_liquid_water = 859900;              % grams/m^3 - density of liquid water
-%rho_liquid_water = 1e6;                 % grams/cm^3 - density of liquid water at 0 C
+%rho_liquid_water = 859900;              % grams/m^3 - density of liquid water
+rho_liquid_water = 1e6;                 % grams/cm^3 - density of liquid water at 0 C
 
 
 re = reshape(re,length(re),1);                                    % re must be a column vector
 z = reshape(z, length(z),1);                                      % z must be a column vector
 
 % ------ open the precomputed mie table and interpolate! -------------
+% for writing water cloud files, we only need the extinction efficiency
+% Since this function is used often, we've created a file with just Q_ext
+
 justQ = true;                       % Load the precomputed mie table of only Q_ext values
-yq = interp_mie_computed_tables([repmat(lambda,size(re)), re], 'mono', justQ);
-Qext = yq(:,5);                                                                          % Extinction efficiency
+yq = interp_mie_computed_tables([repmat(lambda,size(re)), re], distribution_str, justQ);
+
+if length(re)>1
+    Qext = yq(:,5);         % Extinction efficiency
+elseif length(re)==1
+    Qext = yq(:,3);
+else
+    error([newline, 'Something is wrong with the interpolation results', newline]);
+end
+
 
 % ----- For now lets just assume were at the extinction paradox limit --
 %Qext = repmat(2,size(re));
@@ -163,9 +189,9 @@ lwc = 4/3 * pi * rho_liquid_water * (re*1e-6).^3 .* Nc;
 
 % Create the water cloud file name
 if length(re)>1
-    fileName = ['WC_rtop',num2str(round(re(end))),'_rbot',num2str(round(re(1))),'_T',num2str(tau_c),'.DAT'];
+    fileName = ['WC_rtop',num2str(round(re(end))),'_rbot',num2str(round(re(1))),'_T',num2str(tau_c),'_', distribution_str, '.DAT'];
 else
-    fileName = ['WC_r',num2str(round(re)),'_T',num2str(round(tau_c)),'.DAT'];
+    fileName = ['WC_r',num2str(round(re)),'_T',num2str(round(tau_c)),'_', distribution_str, '.DAT'];
 end
 
 

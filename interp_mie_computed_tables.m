@@ -61,7 +61,7 @@ if size(xq,2)~=2
     error([newline,'The query vector xq must have two inputs, one for wavelength and one for radii', newline])
 end
 
-
+%%
 % ------------------------------------------
 % ------------- Function Stuff! ------------
 % ------------------------------------------
@@ -108,64 +108,102 @@ if strcmp(distribution, 'gamma')==true
     % Let's load the mie compute look-up table for a gamma droplet
     % distribution
     
-    
     if justQ_flag==true
+        
+        % if this is true, we only load the Q_ext calculations!
         filename = 'Q_ext_4_AVIRIS_1nm_sampling_gamma_7.txt';
-    else
-        filename = 'Mie_Properties_4_AVIRIS_1nm_sampling_gamma_7.OUT';
-    end
-    
-    
-    % ----- READ IN DATA USING TEXTSCAN() ---------------
-    
-    file_id = fopen([folder_path,filename]);
-    
-    format_spec = '%f %f %f %f %f %f %f %f';        % 8 columns of data
-    
-    data = textscan(file_id, format_spec);
-    
-    % Set up the zero array
-    yq = zeros(1,size(data,1)-2);                                           % The first two rows are not needed
-    
-    
-    % ------------------------------------------------------------
-    % Let's check to make sure the wavelength and effective radius
-    % query locations are within the bounds of the table. If either
-    % are outside the bounds of interpolation, we will extrapolate
-    % and issue a warning
-    % ------------------------------------------------------------
-    
-    if any(xq(:,1)<= wavelength_bounds(1)) || any(xq(:,1)>=wavelength_bounds(2)) || any(xq(:,2) <= r_eff_bounds(1)) || any(xq(:,2) >= r_eff_bounds(2))
+        format_spec = '%f';        % 1 column of data
         
-        % if any of these are true, then we will extrapolate
-        error(['Query points are outside the bounds of the data set. The acceptable ranges are:',newline,...
-            'Wavelength: [100, 3000] nm', newline,...
-            'Effective Radius: [1, 100] microns', newline]);
         
-    else
         
-        % then we will interpoalte
-        % Lets grab all of the values we need in the data set
-        for nn = 1:num_calcs
+        % ----- READ IN DATA USING TEXTSCAN() ---------------
+        
+        file_id = fopen([folder_path,filename]);
+        
+        data = textscan(file_id, format_spec);
+        data = reshape(data{1},100,[]);                                     % rehsape the data into a matrix
+        % Set up the zero array
+        yq = zeros(1,num_calcs);                                           % The first two rows are not needed
+        
+        
+        if any(xq(:,1)<= wavelength_bounds(1)) || any(xq(:,1)>=wavelength_bounds(2)) || any(xq(:,2) <= r_eff_bounds(1)) || any(xq(:,2) >= r_eff_bounds(2))
             
-            for ii = 3:length(data)                         % The first two values are wavelength and effective radius
+            % if any of these are true, then we will extrapolate
+            error(['Query points are outside the bounds of the data set. The acceptable ranges are:',newline,...
+                'Wavelength: [100, 3000] nm', newline,...
+                'Effective Radius: [1, 100] microns', newline]);
+            
+        else
+            
+            % then we will interpoalte
+            % Lets grab all of the values we need in the data set
+            for nn = 1:num_calcs
                 
-                data2interpolate = reshape(data{ii}, 100,[]);
-                yq(nn,ii) = interp2(WL, R_eff, data2interpolate, xq(nn,1), xq(nn,2));
+                yq(nn) = interp2(WL, R_eff, data, xq(nn,1), xq(nn,2));
                 
             end
+            
+            % Lets include the wavelength and effective radius in the
+            % interpolated data cube
+            yq = [xq, yq];
+            
             
             
         end
         
-        % Lets include the wavelength and effective radius in the
-        % interpolated data cube
-        yq = [xq, yq];
+    else
         
+        filename = 'Mie_Properties_4_AVIRIS_1nm_sampling_gamma_7.OUT';
+        format_spec = '%f %f %f %f %f %f %f %f';        % 8 columns of data
+        
+        file_id = fopen([folder_path,filename]);
+        
+        data = textscan(file_id, format_spec);
+        
+        % Set up the zero array
+        yq = zeros(1,size(data,1)-2);                                           % The first two rows are not needed
+        
+        
+        % ------------------------------------------------------------
+        % Let's check to make sure the wavelength and effective radius
+        % query locations are within the bounds of the table. If either
+        % are outside the bounds of interpolation, we will extrapolate
+        % and issue a warning
+        % ------------------------------------------------------------
+        
+        if any(xq(:,1)<= wavelength_bounds(1)) || any(xq(:,1)>=wavelength_bounds(2)) || any(xq(:,2) <= r_eff_bounds(1)) || any(xq(:,2) >= r_eff_bounds(2))
+            
+            % if any of these are true, then we will extrapolate
+            error(['Query points are outside the bounds of the data set. The acceptable ranges are:',newline,...
+                'Wavelength: [100, 3000] nm', newline,...
+                'Effective Radius: [1, 100] microns', newline]);
+            
+        else
+            
+            % then we will interpoalte
+            % Lets grab all of the values we need in the data set
+            for nn = 1:num_calcs
+                
+                for ii = 3:length(data)                         % The first two values are wavelength and effective radius
+                    
+                    data = reshape(data{ii}, 100,[]);
+                    yq(nn,ii) = interp2(WL, R_eff, data, xq(nn,1), xq(nn,2));
+                    
+                end
+                
+                
+            end
+            
+            % Lets include the wavelength and effective radius in the
+            % interpolated data cube
+            yq = [xq, yq];
+            
+            
+            
+        end
         
         
     end
-    
     
     
 elseif strcmp(distribution, 'mono')==true
@@ -190,7 +228,7 @@ elseif strcmp(distribution, 'mono')==true
         data = textscan(file_id, format_spec);
         data = reshape(data{1},100,[]);                                     % rehsape the data into a matrix
         % Set up the zero array
-        yq = zeros(1,size(data,1)-2);                                           % The first two rows are not needed
+        yq = zeros(1,num_calcs);                                           % The first two rows are not needed
         
         
         if any(xq(:,1)<= wavelength_bounds(1)) || any(xq(:,1)>=wavelength_bounds(2)) || any(xq(:,2) <= r_eff_bounds(1)) || any(xq(:,2) >= r_eff_bounds(2))
@@ -206,10 +244,7 @@ elseif strcmp(distribution, 'mono')==true
             % Lets grab all of the values we need in the data set
             for nn = 1:num_calcs
                 
-                    
-                    yq(nn,ii) = interp2(WL, R_eff, data2interpolate, xq(nn,1), xq(nn,2));
-                    
-                
+                yq(nn) = interp2(WL, R_eff, data, xq(nn,1), xq(nn,2));
                 
             end
             
@@ -222,18 +257,70 @@ elseif strcmp(distribution, 'mono')==true
         end
         
     else
-        error([newline,'The distribution you provided is not valid. Enter "gamma" or "mono"',newline])
         
+        filename = 'Mie_Properties_4_AVIRIS_1nm_sampling_monodispersed.OUT';
+        format_spec = '%f %f %f %f %f %f %f %f';        % 8 columns of data
+        
+        file_id = fopen([folder_path,filename]);
+        
+        data = textscan(file_id, format_spec);
+        
+        % Set up the zero array
+        yq = zeros(1,size(data,1)-2);                                           % The first two rows are not needed
+        
+        
+        % ------------------------------------------------------------
+        % Let's check to make sure the wavelength and effective radius
+        % query locations are within the bounds of the table. If either
+        % are outside the bounds of interpolation, we will extrapolate
+        % and issue a warning
+        % ------------------------------------------------------------
+        
+        if any(xq(:,1)<= wavelength_bounds(1)) || any(xq(:,1)>=wavelength_bounds(2)) || any(xq(:,2) <= r_eff_bounds(1)) || any(xq(:,2) >= r_eff_bounds(2))
+            
+            % if any of these are true, then we will extrapolate
+            error(['Query points are outside the bounds of the data set. The acceptable ranges are:',newline,...
+                'Wavelength: [100, 3000] nm', newline,...
+                'Effective Radius: [1, 100] microns', newline]);
+            
+        else
+            
+            % then we will interpoalte
+            % Lets grab all of the values we need in the data set
+            for nn = 1:num_calcs
+                
+                for ii = 3:length(data)                         % The first two values are wavelength and effective radius
+                    
+                    data = reshape(data{ii}, 100,[]);
+                    yq(nn,ii) = interp2(WL, R_eff, data, xq(nn,1), xq(nn,2));
+                    
+                end
+                
+                
+            end
+            
+            % Lets include the wavelength and effective radius in the
+            % interpolated data cube
+            yq = [xq, yq];
+            
+            
+            
+        end
         
         
     end
     
 else
+    error([newline,'The distribution you provided is not valid. Enter "gamma" or "mono"',newline])
     
-    filename = 'Mie_Properties_4_AVIRIS_1nm_sampling_monodispersed.OUT';
-    format_spec = '%f %f %f %f %f %f %f %f';        % 8 columns of data
+    
     
 end
+
+
+
+end
+
 
 
 % ----- READ IN DATA USING IMPORTDATA() ---------------
@@ -281,14 +368,4 @@ end
 %
 %     end
 
-
-
-
-
-
-
-
-
-
-end
 
