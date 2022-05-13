@@ -15,7 +15,7 @@
 %   wavelength first and then the radius. The wavelength should be in
 %   nanometers and the radius should be in microns. Sorry!
 
-%   (3) justQ_flag - tells the code you only need Qext - The entire
+%   (3) justQext_flag - tells the code you only need Qext - The entire
 %   Mie_Properties file is 29 MB, which takes a while to load! To write 10
 %   wc files, reading in the Mie_Properties file 10 times, it takes 8
 %   seconds. But most of the time we only need Qext, so there is a file for
@@ -40,7 +40,7 @@
 % ------------------------------------------------------------------------
 %%
 
-function [yq] = interp_mie_computed_tables(xq,distribution, justQ_flag)
+function [yq] = interp_mie_computed_tables(xq,distribution, justQext_flag)
 
 % ----------------------------------------
 % ------------- Check Inputs! ------------
@@ -109,7 +109,7 @@ if strcmp(distribution, 'gamma')==true
     % Let's load the mie compute look-up table for a gamma droplet
     % distribution
     
-    if justQ_flag==true
+    if justQext_flag==true
         
         % if this is true, we only load the Q_ext calculations!
         filename = 'Q_ext_4_AVIRIS_1nm_sampling_gamma_7.txt';
@@ -146,7 +146,7 @@ if strcmp(distribution, 'gamma')==true
             
             % Lets include the wavelength and effective radius in the
             % interpolated data cube
-            yq = [xq, yq];
+            yq = [xq, yq'];
             
             
             
@@ -159,10 +159,10 @@ if strcmp(distribution, 'gamma')==true
         
         file_id = fopen([folder_path,filename]);
         
-        data = textscan(file_id, format_spec);
+        data_table = textscan(file_id, format_spec);
         
         % Set up the zero array
-        yq = zeros(1,size(data,1)-2);                                           % The first two rows are not needed
+        yq = zeros(1,length(data_table)-2);                                           % The first two rows are not needed
         
         
         % ------------------------------------------------------------
@@ -185,9 +185,9 @@ if strcmp(distribution, 'gamma')==true
             % Lets grab all of the values we need in the data set
             for nn = 1:num_calcs
                 
-                for ii = 3:length(data)                         % The first two values are wavelength and effective radius
+                for ii = 1:size(yq,2)                         % The first two values are wavelength and effective radius
                     
-                    data = reshape(data{ii}, 100,[]);
+                    data = reshape(data_table{ii+2}, 100,[]);
                     yq(nn,ii) = interp2(WL, R_eff, data, xq(nn,1), xq(nn,2));
                     
                 end
@@ -214,7 +214,7 @@ elseif strcmp(distribution, 'mono')==true
     
     
     
-    if justQ_flag==true
+    if justQext_flag==true
         
         % if this is true, we only load the Q_ext calculations!
         filename = 'Q_ext_4_AVIRIS_1nm_sampling_monodispersed.txt';
@@ -226,8 +226,8 @@ elseif strcmp(distribution, 'mono')==true
         
         file_id = fopen([folder_path,filename]);
         
-        data = textscan(file_id, format_spec);
-        data = reshape(data{1},100,[]);                                     % rehsape the data into a matrix
+        data_table = textscan(file_id, format_spec);
+        data_table = reshape(data_table{1},100,[]);                                     % rehsape the data into a matrix
         % Set up the zero array
         yq = zeros(1,num_calcs);                                           % The first two rows are not needed
         
@@ -245,7 +245,7 @@ elseif strcmp(distribution, 'mono')==true
             % Lets grab all of the values we need in the data set
             for nn = 1:num_calcs
                 
-                yq(nn) = interp2(WL, R_eff, data, xq(nn,1), xq(nn,2));
+                yq(nn) = interp2(WL, R_eff, data_table, xq(nn,1), xq(nn,2));
                 
             end
             
