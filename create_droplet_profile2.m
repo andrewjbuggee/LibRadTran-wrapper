@@ -5,11 +5,11 @@
 %   (1) re_top_bottom - effective droplet radius (microns) - these are the
 %   boundary values for the profile you wish to create. You enter them as
 %   a vector in the order specified by the variable name [re_top,
-%   re_bottom]. 
+%   re_bottom].
 
 %   (2) z or tau - the vertical independent variable, which is either
 %   geometric altitude or optical depth. If using geometric altitude (z),
-%   this variable should be defined in units of kilometers. 
+%   this variable should be defined in units of kilometers.
 
 %   (3) 'altitude' or 'optical_depth' - the string that tells the code the
 %   vertical indepdendent variable is either geometric altitude or optical
@@ -18,8 +18,8 @@
 %   (4) constraint - the physical constraint (string) - there are four
 %   different string options for a physical constraint:
 %       (a) 'adiabatic' - this assumption forces the liquid water content to
-%       be proportionl to z, the altitude. 
-%       (b) 'subadiabatic aloft' - this assumption assumes there is
+%       be proportionl to z, the altitude.
+%       (b) 'subadiabatic_aloft' - this assumption assumes there is
 %       increasing entrainment and drying towards the cloud top.
 %       (c) 'linear_with_z' - this constraint forces the effective droplet profile
 %       to behave linearly with z (re(z)~z). Physically we are forcing subadiabtatic
@@ -38,88 +38,120 @@
 function re = create_droplet_profile2(re_top_bottom,zT, independentVariable, constraint)
 
 
+% ------------------------------------------------------------
+% ---------------------- CHECK INPUTS ------------------------
+% ------------------------------------------------------------
+
+% Check to make sure there are 3 inputs, droplet radius, cloud optical
+% depth, and the altitude vector associated with this cloud
+
+
+if nargin~=4
+    error([newline,'Not enough inputs. Need 4: droplet effective radius at cloud top and bottom,',...
+        'the independent variable, a string describing which independent variable is used,',...
+        ' and thermodynamic constraint.', newline])
+end
+
+% Check to make sure re values are greater than 0
+
+if any(re_top_bottom<0)
+    
+    error([newline,'Effective Radius must be greater than 0.', newline])
+end
+
+
+% Check to make sure the thermodynamic constraint is one 1 four
+% possibilites
+
+if strcmp(constraint, 'adiabatic')==false && strcmp(constraint, 'subadiabatic_aloft')==false && strcmp(constraint, 'linear_with_z')==false && strcmp(constraint, 'linear_with_tau')==false
+    
+    error([newline,'I dont recognize the constraint.', newline])
+end
+
+
+% Check to make sure the independent variable is one of two possibilities
+
+if strcmp(independentVariable, 'altitude')==false && strcmp(independentVariable, 'optical_depth')==false 
+    
+    error([newline,'I dont recognize the independent variable.', newline])
+end
+
+
+
+
+%%
+
+
 
 % The boundary values are altered using a powerlaw to get the constraint we
 % want
-    % boundary conditions for r as a function of tau
-    a0 = r_top^(2*x + 3/x);
-    a1 = r_top^(2*x + 3/x) - r_bottom^(2*x + 3/x);
-    
+% boundary conditions for r as a function of tau
+
 
 a0 = @(x) re_top_bottom(1)^(2*x + 3/x);
 a1 = @(x) re_top_bottom(1)^(2*x + 3/x) - re_top_bottom(2)^(2*x + 3/x);
 
-    % boundary conditions for r as a function of z
-    
-    b0 = @(x) re_top_bottom(2)^(x/3);
-    b1 = @(x) re_top_bottom^(x/3) - re_top_bottom^(x/3);
+% boundary conditions for r as a function of z
+
+b0 = @(x) re_top_bottom(2)^(3/x);
+b1 = @(x) re_top_bottom(1)^(3/x) - re_top_bottom(2)^(3/x);
 
 if strcmp(constraint,'subadiabatic_aloft')
     
     % if the profile chosen is subadiabatic aloft, then 0<x<1
     x = 1/2;
     
-    % create the droplet profile
-    if strcmp(independentVariable, 'altitude')
+    
+    if strcmp(independentVariable,'optical_depth')==true
+        re = (a0(x) - a1(x)*(zT./zT(end))).^(1/(2*x + 3/x));
         
-    elseif strcmp(independentVariable, 'optical_depth')
+    elseif strcmp(independentVariable,'altitude')==true
         
-    else
-        error([newline,'Vertical variable is unrecognizable. Only "altitude" and "optical_depth" are accepted.',newline])
+        re = (b0(x) + b1(x) * (zT - zT(1))./zT(end)).^(x/3);                      % droplet profile in geometric coordniate system for an adiabatic cloud
     end
     
     
-elseif strcmp(profile_type,'adiabatic')
+elseif strcmp(constraint,'adiabatic')
     
-        % if the profile chosen is adiabatic, then x=1
+    % if the profile chosen is adiabatic, then x=1
     x = 1;
     
-    % boundary conditions for r as a function of tau
-    a0 = r_top^(2*x + 3/x);
-    a1 = r_top^(2*x + 3/x) - r_bottom^(2*x + 3/x);
     
-    % boundary conditions for r as a function of z
-    
-    b0 = r_bottom^3;
-    b1 = r_top^3 - r_bottom^3;
-    
-    % Boundary conditions for LWC as a function of z
-    
-    % Lets step through each pixel according to data_inputs, and compute
-    % the profile for a given r_bottom, r_top, and tau_c
-    
-    for ii = 1:length(tau_c)
-        T = linspace(0,tau_c(ii),num_query_points);
-        r_tau(ii,:) = (a0 - a1*(T./tau_c(ii))).^(1/(2*x + 3/x));
-        r_z(ii,:) = (b0 + b1 * (z-z0)./h).^(x/3);                      % droplet profile in geometric coordniate system for an adiabatic cloud
+    if strcmp(independentVariable,'optical_depth')==true
+        re = (a0(x) - a1(x)*(zT./zT(end))).^(1/(2*x + 3/x));
         
-        % ----------------------- ASSUMPTION ----------------------
-        % We assume the number concentration is constant with heighy
-        % ---------------------------------------------------------
+    elseif strcmp(independentVariable,'altitude')==true
         
-        % First lets compute the extinction efficient
-        % Lets assume a monodispersed distribution
-        yq = interp_mie_computed_tables([linspace(wl_tau, wl_tau,num_query_points)',r_z(ii,:)'],'mono');
-        
-        Qext = yq(:,5);                                                                          % Extinction efficiency
-        Nc(ii) = tau_c(ii)/(pi*trapz((z-z0),Qext'.*(r_z(ii,:)*1e-6).^2));                                     % m^(-3) - number concentration
-        
-        lwc_z(ii,:) = 4/3 * pi * rho_l * r_z(ii,:).^3 * Nc(ii);
+        re = (b0(x) + b1(x) * (zT - zT(1))./zT(end)).^(x/3);                      % droplet profile in geometric coordniate system for an adiabatic cloud
     end
     
     
-elseif strcmp(profile_type,'subadiabatic_midlevel')
+elseif strcmp(constraint,'linear_with_z')
     
     % if the profile chosen is subadiabatic aloft, then is either 3 or -3
     x = 3;
     
-    a0 = r_top^(2*x + 3/x);
-    a1 = r_top^(2*x + 3/x) - r_bottom^(2*x + 3/x);
+    if strcmp(independentVariable,'optical_depth')==true
+        re = (a0(x) - a1(x)*(zT./zT(end))).^(1/(2*x + 3/x));
+        
+    elseif strcmp(independentVariable,'altitude')==true
+        
+        re = (b0(x) + b1(x) * (zT - zT(1))./zT(end)).^(x/3);                      % droplet profile in geometric coordniate system for an adiabatic cloud
+    end
     
-    for ii = 1:length(tau_c)
-        T = linspace(0,tau_c(ii),num_query_points);
-        r_tau(ii,:) = (a0 - a1*(T./tau_c(ii))).^(1/(2*x + 3/x));
-    end    
+    
+elseif strcmp(constraint,'linear_with_tau')
+    
+    % if the profile chosen is subadiabatic aloft, then is either 3 or -3
+    x = -3;
+    
+    if strcmp(independentVariable,'optical_depth')==true
+        re = (a0(x) - a1(x)*(zT./zT(end))).^(1/(2*x + 3/x));
+        
+    elseif strcmp(independentVariable,'altitude')==true
+        
+        re = (b0(x) + b1(x) * (zT - zT(1))./zT(end)).^(x/3);                      % droplet profile in geometric coordniate system for an adiabatic cloud
+    end
     
     
 else

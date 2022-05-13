@@ -47,7 +47,7 @@
 
 %%
 
-function [] = write_wc_file(re,tau_c,z, H, lambda, distribution_str)
+function [fileName] = write_wc_file(re,tau_c,z, H, lambda, distribution_str)
 
 % ------------------------------------------------------------
 % ---------------------- CHECK INPUTS ------------------------
@@ -157,25 +157,33 @@ rho_liquid_water = 1e6;                 % grams/cm^3 - density of liquid water a
 re = reshape(re,length(re),1);                                    % re must be a column vector
 z = reshape(z, length(z),1);                                      % z must be a column vector
 
-% ------ open the precomputed mie table and interpolate! -------------
+% -------------------------------------------------------------------
+% ------ open the precomputed mie table and interpolate! ------------
+% -------------------------------------------------------------------
+
 % for writing water cloud files, we only need the extinction efficiency
 % Since this function is used often, we've created a file with just Q_ext
 
 justQ = true;                       % Load the precomputed mie table of only Q_ext values
 yq = interp_mie_computed_tables([repmat(lambda,size(re)), re], distribution_str, justQ);
 
-if length(re)>1
+if justQ==false
     Qext = yq(:,5);         % Extinction efficiency
-elseif length(re)==1
-    Qext = yq(:,3);
 else
-    error([newline, 'Something is wrong with the interpolation results', newline]);
+    Qext = yq(:,3);
+
 end
 
 
-% ----- For now lets just assume were at the extinction paradox limit --
+% -------------------------------------------------------------------
+% ----- For now lets just assume were at the extinction paradox limit
 %Qext = repmat(2,size(re));
 % -----------------------------------------------------------------
+
+
+% -------------------------------------------------------------------
+% ------------------- compute number concentration ------------------
+% -------------------------------------------------------------------
 
 if length(z)>1
     Nc = tau_c./(pi*trapz((z-z(1))*1e3,Qext.*(re*1e-6).^2));                                     % m^(-3) - number concentration

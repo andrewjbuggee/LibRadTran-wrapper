@@ -85,7 +85,7 @@ outputArg2 = inputArg2;
 %   slant path. The values have to be increasing in order to be read. 
 %   Units: degrees
 
-%   3) phi - sensor aziumuth - this is the azimuth of the sensor. This can
+%   3) phi - viewing aziumuth - this is the viewing azimuth of the sensor. This can
 %   be input as a vector by leaving a blank space inbetween values. If a
 %   vector is used, values must be increasing. Units: degrees. Values are
 %   between [0,360], where 0 implies a device in the North looking

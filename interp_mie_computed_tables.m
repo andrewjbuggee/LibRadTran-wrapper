@@ -61,11 +61,6 @@ if size(xq,2)~=2
     error([newline,'The query vector xq must have two inputs, one for wavelength and one for radii', newline])
 end
 
-%%
-% ------------------------------------------
-% ------------- Function Stuff! ------------
-% ------------------------------------------
-
 % Determine which computer you're using
 computer_name = whatComputer;
 
@@ -77,6 +72,12 @@ elseif strcmp(computer_name,'andrewbuggee')==true
     folder_path = '/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/LibRadTran/libRadtran-2.0.4/Mie_Calculations/';
     
 end
+
+%%
+% ------------------------------------------
+% ------------- Function Stuff! ------------
+% ------------------------------------------
+
 
 % -- Define the boundaries of interpolation for wavelength and radius --
 
@@ -250,7 +251,7 @@ elseif strcmp(distribution, 'mono')==true
             
             % Lets include the wavelength and effective radius in the
             % interpolated data cube
-            yq = [xq, yq];
+            yq = [xq, yq'];
             
             
             
@@ -263,10 +264,10 @@ elseif strcmp(distribution, 'mono')==true
         
         file_id = fopen([folder_path,filename]);
         
-        data = textscan(file_id, format_spec);
+        data_table = textscan(file_id, format_spec);
         
         % Set up the zero array
-        yq = zeros(1,size(data,1)-2);                                           % The first two rows are not needed
+        yq = zeros(1,length(data_table)-2);                                           % The first two rows are not needed
         
         
         % ------------------------------------------------------------
@@ -289,9 +290,9 @@ elseif strcmp(distribution, 'mono')==true
             % Lets grab all of the values we need in the data set
             for nn = 1:num_calcs
                 
-                for ii = 3:length(data)                         % The first two values are wavelength and effective radius
+                for ii = 1:size(yq,2)                         % The first two values are wavelength and effective radius
                     
-                    data = reshape(data{ii}, 100,[]);
+                    data = reshape(data_table{ii+2}, 100,[]);
                     yq(nn,ii) = interp2(WL, R_eff, data, xq(nn,1), xq(nn,2));
                     
                 end

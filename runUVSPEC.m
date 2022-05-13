@@ -27,6 +27,27 @@ elseif iscell(inputName)==true && iscell(outputName)==true
     end
 end
 
+% -------------------------------------------
+% -----
+
+% Determine which computer you're using
+computer_name = whatComputer;
+
+% Find the folder where the mie calculations are stored
+% find the folder where the water cloud files are stored.
+if strcmp(computer_name,'anbu8374')==true
+    
+    error([newline,'There is no path for the solar flux data right now!', newline])
+    
+elseif strcmp(computer_name,'andrewbuggee')==true
+    
+    folderSolar = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
+        'LibRadTran/libRadtran-2.0.4/data/solar_flux/'];
+end
+
+
+
+
 
 
 %% ----- Lets Read the input file -----
@@ -152,10 +173,9 @@ if numFiles2Run==1
     % all solar source files will be located in the folder: /Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/LibRadTran/libRadtran-2.0.4/data/solar_flux
     % all thermal source files will be located in the foler:
     if strcmp('solar',match7{1}(index7_space1(1)+1:index7_space2(2)))
-%         folderSolar = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
-%             'LibRadTran/libRadtran-2.0.4/data/solar_flux/'];
+        
         fileSolar = match7{1}(index7_file1(1)+5:index7_file2(1)+3);
-        sourceFile = fileread([fileSolar]);
+        sourceFile = fileread([folderSolar,fileSolar]);
         
         exprSource = '[^\n]*[\d][\d] [^\n]*'; % look for the new lines with atleast two digits in a row
         matchSource = regexp(sourceFile,exprSource,'match'); % find rte_solver typ
@@ -401,7 +421,7 @@ usrName = whatComputer;
 
 if strcmp('anbu8374',usrName)
     
-        uvspec_folderName = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/bin/';
+    uvspec_folderName = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/bin/';
     
 elseif strcmp('andrewbuggee',usrName)
     
@@ -409,7 +429,7 @@ elseif strcmp('andrewbuggee',usrName)
         'Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
         'LibRadTran/libRadtran-2.0.4/bin/'];
     
-else 
+else
     
     error('I dont know where the uvspec function is! Tell me what folder its in, please')
     
