@@ -150,8 +150,9 @@ end
 % This is the only way I can get my estimates of optical depth to match
 % LibRadTrans estimates
 
-%rho_liquid_water = 859900;              % grams/m^3 - density of liquid water
-rho_liquid_water = 1e6;                 % grams/cm^3 - density of liquid water at 0 C
+%rho_liquid_water = 859900;             % grams/m^3 - density of liquid water
+%rho_liquid_water = 1;                   % grams/cm^3
+rho_liquid_water = 1e6;                 % grams/m^3 - density of liquid water at 0 C
 
 
 re = reshape(re,length(re),1);                                    % re must be a column vector
@@ -188,11 +189,12 @@ end
 if length(z)>1
     Nc = tau_c./(pi*trapz((z-z(1))*1e3,Qext.*(re*1e-6).^2));                                     % m^(-3) - number concentration
 else
-    Nc = tau_c./(pi*(H*1e3)*Qext.*(re*1e-6).^2);                                     % m^(-3) - number concentration
+    Nc = tau_c./((H*1e3)*Qext.*pi.*(re*1e-6).^2);                                     % m^(-3) - number concentration
     
 end
 
-lwc = 4/3 * pi * rho_liquid_water * (re*1e-6).^3 .* Nc;
+% LWC must be in units of grams/meter^3
+lwc = 4/3 * pi * rho_liquid_water * (re*1e-6).^3 .* Nc;                               %  g/m^3 - grams of water per cubic meter of air
 
 
 % Create the water cloud file name

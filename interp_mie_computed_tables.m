@@ -40,7 +40,7 @@
 % ------------------------------------------------------------------------
 %%
 
-function [yq] = interp_mie_computed_tables(xq,distribution, justQext_flag)
+function [yq] = interp_mie_computed_tables(xq, distribution, justQext_flag)
 
 % ----------------------------------------
 % ------------- Check Inputs! ------------
