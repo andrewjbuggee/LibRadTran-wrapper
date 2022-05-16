@@ -119,9 +119,9 @@ if strcmp(distribution, 'gamma')==true
         
         % ----- READ IN DATA USING TEXTSCAN() ---------------
         
-        file_id = fopen([folder_path,filename]);
+        file_id = fopen([folder_path,filename],'r');
         
-        data = textscan(file_id, format_spec);
+        data = textscan(file_id, format_spec, 'CommentStyle','#');
         data = reshape(data{1},100,[]);                                     % rehsape the data into a matrix
         % Set up the zero array
         yq = zeros(1,num_calcs);                                           % The first two rows are not needed
@@ -157,9 +157,9 @@ if strcmp(distribution, 'gamma')==true
         filename = 'Mie_Properties_4_AVIRIS_1nm_sampling_gamma_7.OUT';
         format_spec = '%f %f %f %f %f %f %f %f';        % 8 columns of data
         
-        file_id = fopen([folder_path,filename]);
+        file_id = fopen([folder_path,filename], 'r');  % Open for reading only
         
-        data_table = textscan(file_id, format_spec);
+        data_table = textscan(file_id, format_spec, 'CommentStyle','#');
         
         % Set up the zero array
         yq = zeros(1,length(data_table)-2);                                           % The first two rows are not needed
@@ -217,16 +217,16 @@ elseif strcmp(distribution, 'mono')==true
     if justQext_flag==true
         
         % if this is true, we only load the Q_ext calculations!
-        filename = 'Q_ext_4_AVIRIS_1nm_sampling_monodispersed.txt';
+        filename = 'Q_ext_1nm_sampling_monodispersed.txt';
         format_spec = '%f';        % 1 column of data
         
         
         
         % ----- READ IN DATA USING TEXTSCAN() ---------------
         
-        file_id = fopen([folder_path,filename]);
+        file_id = fopen([folder_path,filename], 'r');           % open for reading only
         
-        data_table = textscan(file_id, format_spec);
+        data_table = textscan(file_id, format_spec, 'CommentStyle','#');
         data_table = reshape(data_table{1},100,[]);                                     % rehsape the data into a matrix
         % Set up the zero array
         yq = zeros(1,num_calcs);                                           % The first two rows are not needed
@@ -262,9 +262,9 @@ elseif strcmp(distribution, 'mono')==true
         filename = 'Mie_Properties_4_AVIRIS_1nm_sampling_monodispersed.OUT';
         format_spec = '%f %f %f %f %f %f %f %f';        % 8 columns of data
         
-        file_id = fopen([folder_path,filename]);
+        file_id = fopen([folder_path,filename], 'r');       % open for reading only
         
-        data_table = textscan(file_id, format_spec);
+        data_table = textscan(file_id, format_spec, 'CommentStyle','#');
         
         % Set up the zero array
         yq = zeros(1,length(data_table)-2);                                           % The first two rows are not needed
