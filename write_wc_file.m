@@ -17,10 +17,12 @@
 %   liquid water content (LWC). But usually people talk about clouds as
 %   having a certain droplet size and a certain optical thickness.
 
-%   (3) z - altitude above sea level (kilometers) - this is a vector with
-%   the same length as re. The first value defines the base of
-%   the cloud. If there are multiple values, each entry defines the start
-%   of the next layer where the re value changes.
+%   (3) z_topBottom - altitude above sea level (kilometers) - this is a
+%   vector with two values: [z_cloudTop, z_cloudBottom]. LibRadTran
+%   constructs a cloud by creating layers, where each layer is homogenous
+%   untill the next layer is defined. If z_cloudTop defines where the cloud
+%   ends, this is where the LWC should go to zero. This function will
+%   compute a z vector equal in length to that of re.
 
 %   (4) H - geometric thickness of the cloud (kilometers) - this is a
 %   single value that defines the total geometric cloud thickness.
@@ -47,7 +49,7 @@
 
 %%
 
-function [fileName] = write_wc_file(re,tau_c,z, H, lambda, distribution_str)
+function [fileName] = write_wc_file(re,tau_c,z_topBottom, H, lambda, distribution_str)
 
 % ------------------------------------------------------------
 % ---------------------- CHECK INPUTS ------------------------
@@ -64,10 +66,9 @@ end
 
 % Check to make sure re is the same length as the altitude vector
 
-if length(re)==length(z)
+if length(z_topBottom)~=2
     
-else
-    error([newline,'The query vector xq must have two inputs, one for wavelength and one for radii', newline])
+    error([newline,'Need two values for z_topBottom: altitude at cloud bottom top and cloud bottom', newline])
 end
 
 if length(lambda)>1 || length(H)>1 || length(tau_c)>1
@@ -135,8 +136,8 @@ if strcmp(computer_name,'anbu8374')==true
     
 elseif strcmp(computer_name,'andrewbuggee')==true
     
-    mie_calc_folder_path = '/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/LibRadTran/libRadtran-2.0.4/Mie_Calculations/';
-    water_cloud_folder_path = '/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/LibRadTran/libRadtran-2.0.4/data/wc/';
+    mie_calc_folder_path = '/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval/LibRadTran/libRadtran-2.0.4/Mie_Calculations/';
+    water_cloud_folder_path = '/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval/LibRadTran/libRadtran-2.0.4/data/wc/';
     
 end
 
@@ -155,8 +156,20 @@ end
 rho_liquid_water = 1e6;                 % grams/m^3 - density of liquid water at 0 C
 
 
-re = reshape(re,length(re),1);                                    % re must be a column vector
-z = reshape(z, length(z),1);                                      % z must be a column vector
+re = reshape(re,length(re),1);                          % re must be a column vector
+
+% -------------------------------------------
+% ------ Create altitude vector! ------------
+% -------------------------------------------
+
+% the length of the altitude vector should be 1 unit longer than the length
+% of the effective radius. Thats because the last value in the altitude
+% vector is the altitude at cloud top, where the LWC has gone to zero
+
+nLayers = length(re)+1;             % Number of altitude levels we need to define a cloud
+
+% z must be a column vector
+z = linspace(z_topBottom(2), z_topBottom(1), nLayers)';                 % km - altitude vector                   
 
 % -------------------------------------------------------------------
 % ------ open the precomputed mie table and interpolate! ------------
@@ -186,8 +199,8 @@ end
 % ------------------- compute number concentration ------------------
 % -------------------------------------------------------------------
 
-if length(z)>1
-    Nc = tau_c./(pi*trapz((z-z(1))*1e3,Qext.*(re*1e-6).^2));                                     % m^(-3) - number concentration
+if length(re)>1
+    Nc = tau_c./(pi*trapz((z(1:end-1)-z(1))*1e3,Qext.*(re*1e-6).^2));                % m^(-3) - number concentration
 else
     Nc = tau_c./((H*1e3)*Qext.*pi.*(re*1e-6).^2);                                     % m^(-3) - number concentration
     
@@ -211,41 +224,43 @@ end
 % ----------------- WE NEED TO APPEND ZEROS ------------------
 % ------------------------------------------------------------
 
-% Wherever the cloud is, there needs to be zeros above and below so the
-% LibRadTran knows where the cloud boundary is
+% Wherever the cloud is, there needs to be zeros at the cloud top altitude,
+% and below the cloud bottom altitude. This information tells LibRadTran
+% where the boundaries of the cloud are
 
 % both the effective radius and the LWC need zeros on either boundary,
 % unless if the cloud is at the surface
 
-if length(z)==1
+if length(re)==1
     
-    if min(z)==0
-        % then we only append zeros above the cloud
-        z = [z; z+H];
+    if z_topBottom(2)==0
+        % If true, then the cloud starts at the surface and we only append
+        % zeros above the cloud
         re = [re; 0];
         lwc = [lwc; 0];
         
     else
-        % Then we need zeros on either end
-        z = [0; z; z+H];
+        % In this case, we need zeros below the cloud bottom, and at cloud
+        % top
+        z = [0; z];                 % create a value at the surface where the cloud parameters go to zero
         re = [0; re; 0];
         lwc = [0; lwc; 0];
         
     end
     
-elseif length(z)>1
+elseif length(re)>1
     
+    % Cloud top height defines the altitude where there is no cloud.
     
     % if the minimum z value is 0 then the cloud is at the surface
-    if min(z)==0
+    if z_topBottom(2)==0
         % then we only append zeros above the cloud
-        z = [z; z(end) + (z(end)-z(end-1))];
         re = [re; 0];
         lwc = [lwc; 0];
         
     else
         % Then we need zeros on either end
-        z = [0; z; z(end) + (z(end)-z(end-1))];
+        z = [0; z];   
         re = [0; re; 0];
         lwc = [0; lwc; 0];
         

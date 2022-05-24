@@ -42,7 +42,7 @@ if strcmp(computer_name,'anbu8374')==true
     
 elseif strcmp(computer_name,'andrewbuggee')==true
     
-    folderSolar = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
+    folderSolar = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval/',...
         'LibRadTran/libRadtran-2.0.4/data/solar_flux/'];
 end
 
@@ -427,7 +427,7 @@ if strcmp('anbu8374',usrName)
 elseif strcmp('andrewbuggee',usrName)
     
     uvspec_folderName = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/'...
-        'Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
+        'Hyperspectral-Cloud-Droplet-Retrieval/',...
         'LibRadTran/libRadtran-2.0.4/bin/'];
     
 else
