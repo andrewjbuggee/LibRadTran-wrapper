@@ -69,7 +69,7 @@ if strcmp(computer_name,'anbu8374')==true
     folder_path = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/Mie_Calculations/';
     
 elseif strcmp(computer_name,'andrewbuggee')==true
-    folder_path = '/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/LibRadTran/libRadtran-2.0.4/Mie_Calculations/';
+    folder_path = '/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval/LibRadTran/libRadtran-2.0.4/Mie_Calculations/';
     
 end
 
@@ -79,17 +79,6 @@ end
 % ------------------------------------------
 
 
-% -- Define the boundaries of interpolation for wavelength and radius --
-
-wavelength_bounds = [100, 3000];            % nanometers - wavelength boundaries
-r_eff_bounds = [1, 100];                    % microns - effective radius boundaries
-
-% ---- Create the grids for interpolation ----
-
-wl = wavelength_bounds(1):wavelength_bounds(2);         % nm
-r_eff = r_eff_bounds(1):r_eff_bounds(2);                % microns
-
-[WL, R_eff] = meshgrid(wl,r_eff);                       % Meshgrid for inerpolation
 
 
 % The data fields are in the following order:
@@ -112,7 +101,7 @@ if strcmp(distribution, 'gamma')==true
     if justQ_flag==true
         
         % if this is true, we only load the Q_ext calculations!
-        filename = 'Q_ext_4_AVIRIS_1nm_sampling_gamma_7.txt';
+        filename = 'Q_ext_1nm_sampling_gamma_7.txt';
         format_spec = '%f';        % 1 column of data
         
         
@@ -121,13 +110,27 @@ if strcmp(distribution, 'gamma')==true
         
         file_id = fopen([folder_path,filename]);
         
-        data = textscan(file_id, format_spec);
+        data = textscan(file_id, format_spec, 'CommentStyle','#', 'Delimiter',...
+            {'\r', ' '}, 'MultipleDelimsAsOne',1);
+        
         data = reshape(data{1},100,[]);                                     % rehsape the data into a matrix
         % Set up the zero array
         yq = zeros(1,num_calcs);                                           % The first two rows are not needed
         
         
-        if any(xq(:,1)<= wavelength_bounds(1)) || any(xq(:,1)>=wavelength_bounds(2)) || any(xq(:,2) <= r_eff_bounds(1)) || any(xq(:,2) >= r_eff_bounds(2))
+        % -- Define the boundaries of interpolation for wavelength and radius --
+        
+        wavelength_bounds = [100, 3000];            % nanometers - wavelength boundaries
+        r_eff_bounds = [1, 100];                    % microns - effective radius boundaries
+        
+        % ---- Create the grids for interpolation ----
+        
+        wl = wavelength_bounds(1):wavelength_bounds(2);         % nm
+        r_eff = r_eff_bounds(1):r_eff_bounds(2);                % microns
+        
+        [WL, R_eff] = meshgrid(wl,r_eff);                       % Meshgrid for inerpolation
+        
+        if any(xq(:,1)< wavelength_bounds(1)) || any(xq(:,1)>wavelength_bounds(2)) || any(xq(:,2) < r_eff_bounds(1)) || any(xq(:,2) > r_eff_bounds(2))
             
             % if any of these are true, then we will extrapolate
             error(['Query points are outside the bounds of the data set. The acceptable ranges are:',newline,...
@@ -146,7 +149,7 @@ if strcmp(distribution, 'gamma')==true
             
             % Lets include the wavelength and effective radius in the
             % interpolated data cube
-            yq = [xq, yq];
+            yq = [xq, yq'];
             
             
             
@@ -154,15 +157,33 @@ if strcmp(distribution, 'gamma')==true
         
     else
         
-        filename = 'Mie_Properties_4_AVIRIS_1nm_sampling_gamma_7.OUT';
+        filename = 'Mie_calcs_1nm_sampling_gamma_7.OUT';          % This file computes re=1:1:100 and lambda=100:1:3000
+        
+        %filename = 'Mie_calcs_gamma7_10nm_sampling_txt.OUT';                % This file computes re=1:10:100 and lambda=100:10:2500
+       
         format_spec = '%f %f %f %f %f %f %f %f';        % 8 columns of data
         
         file_id = fopen([folder_path,filename]);
         
-        data = textscan(file_id, format_spec);
+        data_raw = textscan(file_id, format_spec, 'CommentStyle','#', 'Delimiter',...
+            {'\r', ' '}, 'MultipleDelimsAsOne',1);
         
         % Set up the zero array
-        yq = zeros(1,size(data,1)-2);                                           % The first two rows are not needed
+        yq = zeros(1,size(data_raw,1)-2);                                           % The first two rows are not needed
+        
+        
+        % -- Define the boundaries of interpolation for wavelength and radius --
+        
+        wavelength_bounds = [data_raw{1}(1), data_raw{1}(end)];            % nanometers - wavelength boundaries
+        r_eff_bounds = [data_raw{2}(1), data_raw{2}(end)];                    % microns - effective radius boundaries
+        
+
+        % ---- Create the grids for interpolation ----
+        
+        wl = unique(data_raw{1});         % nm
+        r_eff = unique(data_raw{2});                % microns
+        
+        [WL, R_eff] = meshgrid(wl,r_eff);                       % Meshgrid for inerpolation
         
         
         % ------------------------------------------------------------
@@ -185,10 +206,10 @@ if strcmp(distribution, 'gamma')==true
             % Lets grab all of the values we need in the data set
             for nn = 1:num_calcs
                 
-                for ii = 3:length(data)                         % The first two values are wavelength and effective radius
+                for ii = 3:length(data_raw)                         % The first two values are wavelength and effective radius
                     
-                    data = reshape(data{ii}, 100,[]);
-                    yq(nn,ii) = interp2(WL, R_eff, data, xq(nn,1), xq(nn,2));
+                    data = reshape(data_raw{ii}, length(unique(data_raw{2})),[]);
+                    yq(nn,ii-2) = interp2(WL, R_eff, data, xq(nn,1), xq(nn,2));
                     
                 end
                 
@@ -217,7 +238,7 @@ elseif strcmp(distribution, 'mono')==true
     if justQ_flag==true
         
         % if this is true, we only load the Q_ext calculations!
-        filename = 'Q_ext_4_AVIRIS_1nm_sampling_monodispersed.txt';
+        filename = 'Q_ext_1nm_sampling_monodispersed.txt';
         format_spec = '%f';        % 1 column of data
         
         
@@ -226,10 +247,26 @@ elseif strcmp(distribution, 'mono')==true
         
         file_id = fopen([folder_path,filename]);
         
-        data = textscan(file_id, format_spec);
+        data = textscan(file_id, format_spec, 'CommentStyle','#', 'Delimiter',...
+            {'\r', ' '}, 'MultipleDelimsAsOne',1);
         data = reshape(data{1},100,[]);                                     % rehsape the data into a matrix
         % Set up the zero array
         yq = zeros(1,num_calcs);                                           % The first two rows are not needed
+        
+        
+        % -- Define the boundaries of interpolation for wavelength and radius --
+        
+        wavelength_bounds = [100, 3000];            % nanometers - wavelength boundaries
+        r_eff_bounds = [1, 100];                    % microns - effective radius boundaries
+        
+
+        % ---- Create the grids for interpolation ----
+        
+        wl = wavelength_bounds(1):1:wavelength_bounds(2);         % nm
+        r_eff = r_eff_bounds(1):1:r_eff_bounds(2);                % microns
+        
+        [WL, R_eff] = meshgrid(wl,r_eff);                       % Meshgrid for inerpolation
+        
         
         
         if any(xq(:,1)<= wavelength_bounds(1)) || any(xq(:,1)>=wavelength_bounds(2)) || any(xq(:,2) <= r_eff_bounds(1)) || any(xq(:,2) >= r_eff_bounds(2))
@@ -264,10 +301,25 @@ elseif strcmp(distribution, 'mono')==true
         
         file_id = fopen([folder_path,filename]);
         
-        data_table = textscan(file_id, format_spec);
+        data_raw = textscan(file_id, format_spec, 'CommentStyle','#', 'Delimiter',...
+            {'\r', ' '}, 'MultipleDelimsAsOne',1);
         
         % Set up the zero array
-        yq = zeros(1,length(data_table)-2);                                           % The first two rows are not needed
+        yq = zeros(1,size(data_raw,1)-2);                                           % The first two rows are not needed
+        
+        
+        % -- Define the boundaries of interpolation for wavelength and radius --
+        
+        wavelength_bounds = [data_raw{1}(1), data_raw{1}(end)];            % nanometers - wavelength boundaries
+        r_eff_bounds = [data_raw{2}(1), data_raw{2}(end)];                    % microns - effective radius boundaries
+        
+
+        % ---- Create the grids for interpolation ----
+        
+        wl = unique(data_raw{1});         % nm
+        r_eff = unique(data_raw{2});                % microns
+        
+        [WL, R_eff] = meshgrid(wl,r_eff);                       % Meshgrid for inerpolation
         
         
         % ------------------------------------------------------------
@@ -290,10 +342,10 @@ elseif strcmp(distribution, 'mono')==true
             % Lets grab all of the values we need in the data set
             for nn = 1:num_calcs
                 
-                for ii = 1:size(yq,2)                         % The first two values are wavelength and effective radius
+                for ii = 3:length(data_raw)                         % The first two values are wavelength and effective radius
                     
-                    data = reshape(data_table{ii+2}, 100,[]);
-                    yq(nn,ii) = interp2(WL, R_eff, data, xq(nn,1), xq(nn,2));
+                    data = reshape(data_raw{ii}, length(unique(data_raw{2})),[]);
+                    yq(nn,ii-2) = interp2(WL, R_eff, data, xq(nn,1), xq(nn,2));
                     
                 end
                 
