@@ -22,14 +22,14 @@ userName = whatComputer;
 
 if strcmp(userName,'anbu8374')
     
-        libRadTran_path = ['/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4'];
+    libRadTran_path = ['/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4'];
     templateFolder = ['/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/INP_template_files/'];
 elseif strcmp(userName,'andrewbuggee')
     
-    libRadTran_path = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
-    'LibRadTran/libRadtran-2.0.4'];
+    libRadTran_path = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval/',...
+        'LibRadTran/libRadtran-2.0.4'];
     templateFolder = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/',...
-        'Hyperspectral-Cloud-Droplet-Retrieval-Research/LibRadTran/libRadtran-2.0.4/INP_template_files/'];
+        'Hyperspectral-Cloud-Droplet-Retrieval/LibRadTran/libRadtran-2.0.4/INP_template_files/'];
 else
     error('I dont recognize this computer user name')
 end
@@ -60,10 +60,8 @@ oldFile = 'band_sza_saz__oceanSurface_template.INP';
 
 % define the expressions that you wish to edit in the template file
 
-oldExpr = {'wc_file 1D ../data/wc/WC_r04_T01.DAT', 'wavelength 0.00000 0.000000',...
+oldExpr = {'wc_file 1D ../data/wc/WC_r04_T01_dist_.DAT', 'wavelength 0.00000 0.000000',...
     'sza 0000.0','phi0 0000.0','umu 0000.0','phi 0000.0'};
-
-
 
 
 
@@ -249,31 +247,73 @@ for pp = 1:length(pixel_row)
                 inpNames{pp,rr,tt,bb} = [fileBegin,num2str(modis_band_num),'_r_',num2str(re(rr)),'_T_',num2str(tau_c(tt)),'.INP'];
                 
                 
-                                % lets define the new expressions to substitute the old ones
+                % lets define the new expressions to substitute the old ones
                 
-                if re(rr)<10 && tau_c(tt)<10
-                    newExpr{1} = ['wc_file 1D ../data/wc/WC_r0',num2str(re(rr)),'_T0',num2str(tau_c(tt)),'.DAT'];
+                
+                % ----- Write a wc file for each re and tau -----
+                
+                % for now, lets code every cloud to be at the same
+                % altitude, with the same thickness.
+                
+                % ------ FUTURE WORK -------
+                % Retireve the cloud top pressure and infer a more accurate
+                % cloud top height
+                z_topBottom = [1.5, 1];                     % km - cloud top and bottom altitude above ground
+                H = 0.5;                                    % km - cloud geometric thickness
+                lambda = modisBandsCenter(modis_band_num);  % nm - wavvelength
+                dist_str = 'mono';                          % monodispersed distribution - until we can fix the gamma distribution issue
+                
+                wc_filename = write_wc_file(re(rr), tau_c(tt), z_topBottom, H, lambda, dist_str);
+                
+                % lets start with inserting the proper water cloud file
+                
+                if strcmp(dist_str,'mono')==true
                     
-                elseif re(rr)>=10 && tau_c(tt)<10
-                    newExpr{1} = ['wc_file 1D ../data/wc/WC_r',num2str(re(rr)),'_T0',num2str(tau_c(tt)),'.DAT'];
-                  
-                elseif re(rr)>=10 && tau_c(tt)>=10
-                    newExpr{1} = ['wc_file 1D ../data/wc/WC_r',num2str(re(rr)),'_T',num2str(tau_c(tt)),'.DAT'];
+                    if re(rr)<10 && tau_c(tt)<10
+                        % newExpr{1} = ['wc_file 1D ../data/wc/WC_r0',num2str(re(rr)),'_T0',num2str(tau_c(tt)),'.DAT'];
+                        newExpr{1} = ['wc_file 1D ../data/wc/',wc_filename(1:4),'0',wc_filename(5:7), '00',wc_filename(8:end)];
+                    elseif re(rr)>=10 && tau_c(tt)<10
+                        %newExpr{1} = ['wc_file 1D ../data/wc/WC_r',num2str(re(rr)),'_T0',num2str(tau_c(tt)),'.DAT'];
+                        newExpr{1} = ['wc_file 1D ../data/wc/',wc_filename(1:8),'00',wc_filename(9:end)];
+                    elseif re(rr)>=10 && tau_c(tt)>=10
+                        %newExpr{1} = ['wc_file 1D ../data/wc/WC_r',num2str(re(rr)),'_T',num2str(tau_c(tt)),'.DAT'];
+                        newExpr{1} = ['wc_file 1D ../data/wc/',wc_filename(1:10),'_',wc_filename(11:end)];
+                    elseif re(rr)<10 && tau_c(tt)>=10
+                        %newExpr{1} = ['wc_file 1D ../data/wc/WC_r0',num2str(re(rr)),'_T',num2str(tau_c(tt)),'.DAT'];
+                        newExpr{1} = ['wc_file 1D ../data/wc/',wc_filename(1:4),'00',wc_filename(5:end)];
+                    end
                     
-                elseif re(rr)<10 && tau_c(tt)>=10
-                    newExpr{1} = ['wc_file 1D ../data/wc/WC_r0',num2str(re(rr)),'_T',num2str(tau_c(tt)),'.DAT'];
+                elseif strcmp(dist_str, 'gamma')==true
                     
+                    if re(rr)<10 && tau_c(tt)<10
+                        % newExpr{1} = ['wc_file 1D ../data/wc/WC_r0',num2str(re(rr)),'_T0',num2str(tau_c(tt)),'.DAT'];
+                        newExpr{1} = ['wc_file 1D ../data/wc/',wc_filename(1:4),'0',wc_filename(5:7), '0',wc_filename(8:end)];
+                    elseif re(rr)>=10 && tau_c(tt)<10
+                        %newExpr{1} = ['wc_file 1D ../data/wc/WC_r',num2str(re(rr)),'_T0',num2str(tau_c(tt)),'.DAT'];
+                        newExpr{1} = ['wc_file 1D ../data/wc/',wc_filename(1:8),'0',wc_filename(9:end)];
+                    elseif re(rr)>=10 && tau_c(tt)>=10
+                        %newExpr{1} = ['wc_file 1D ../data/wc/WC_r',num2str(re(rr)),'_T',num2str(tau_c(tt)),'.DAT'];
+                        newExpr{1} = ['wc_file 1D ../data/wc/',wc_filename];
+                    elseif re(rr)<10 && tau_c(tt)>=10
+                        %newExpr{1} = ['wc_file 1D ../data/wc/WC_r0',num2str(re(rr)),'_T',num2str(tau_c(tt)),'.DAT'];
+                        newExpr{1} = ['wc_file 1D ../data/wc/',wc_filename(1:4),'0',wc_filename(5:end)];
+                    end
+                    
+                else
+                    
+                    error([newline, 'I dont recognize the distribution string.', newline])
                 end
-
                 
                 
-              
+                
+                
+                
                 
                 
                 % ------ THIS WONT RUN IN PARALELL -----
                 % because we are passing temporary variables out of the
                 % loop and into this function below. This is not allowed in
-                % parfor 
+                % parfor
                 
                 edit_INP_DAT_files(templateFolder,newFolder,oldFile,inpNames{pp,rr,tt,bb},oldExpr,newExpr);
                 

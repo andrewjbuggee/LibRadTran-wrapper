@@ -346,7 +346,7 @@ elseif numFiles2Run>1
                 folderSolar = ['/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/data/solar_flux/'];
                 
             elseif strcmp(folderName(1:19),'/Users/andrewbuggee')
-                folderSolar = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/',...
+                folderSolar = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval/',...
                     'LibRadTran/libRadtran-2.0.4/data/solar_flux/'];
             else
                 error('Dont reconginze the libradtran solar flux folder')

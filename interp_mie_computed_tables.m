@@ -13,7 +13,7 @@
 %   droplet of radius r at wavelength w, xq is a vector that defines the
 %   locations r and w for interpolation. xq = [w,r] so please provide the
 %   wavelength first and then the radius. The wavelength should be in
-%   nanometers and the radius should be in microns. Sorry!
+%   nanometers and the radius should be in microns. Sorry! 
 
 %   (3) justQ_flag - tells the code you only need Qext - The entire
 %   Mie_Properties file is 29 MB, which takes a while to load! To write 10
@@ -114,9 +114,6 @@ if strcmp(distribution, 'gamma')==true
             {'\r', ' '}, 'MultipleDelimsAsOne',1);
         
         data = reshape(data{1},100,[]);                                     % rehsape the data into a matrix
-        % Set up the zero array
-        yq = zeros(1,num_calcs);                                           % The first two rows are not needed
-        
         
         % -- Define the boundaries of interpolation for wavelength and radius --
         
@@ -141,15 +138,13 @@ if strcmp(distribution, 'gamma')==true
             
             % then we will interpoalte
             % Lets grab all of the values we need in the data set
-            for nn = 1:num_calcs
-                
-                yq(nn) = interp2(WL, R_eff, data, xq(nn,1), xq(nn,2));
-                
-            end
+            
+            yq = interp2(WL, R_eff, data, xq(:,1), xq(:,2));
+            
             
             % Lets include the wavelength and effective radius in the
             % interpolated data cube
-            yq = [xq, yq'];
+            yq = [xq, yq];
             
             
             
@@ -160,7 +155,7 @@ if strcmp(distribution, 'gamma')==true
         filename = 'Mie_calcs_1nm_sampling_gamma_7.OUT';          % This file computes re=1:1:100 and lambda=100:1:3000
         
         %filename = 'Mie_calcs_gamma7_10nm_sampling_txt.OUT';                % This file computes re=1:10:100 and lambda=100:10:2500
-       
+        
         format_spec = '%f %f %f %f %f %f %f %f';        % 8 columns of data
         
         file_id = fopen([folder_path,filename]);
@@ -169,7 +164,7 @@ if strcmp(distribution, 'gamma')==true
             {'\r', ' '}, 'MultipleDelimsAsOne',1);
         
         % Set up the zero array
-        yq = zeros(1,size(data_raw,1)-2);                                           % The first two rows are not needed
+        yq = zeros(num_calcs,size(data_raw,1)-2);                                           % The first two rows are not needed
         
         
         % -- Define the boundaries of interpolation for wavelength and radius --
@@ -177,7 +172,7 @@ if strcmp(distribution, 'gamma')==true
         wavelength_bounds = [data_raw{1}(1), data_raw{1}(end)];            % nanometers - wavelength boundaries
         r_eff_bounds = [data_raw{2}(1), data_raw{2}(end)];                    % microns - effective radius boundaries
         
-
+        
         % ---- Create the grids for interpolation ----
         
         wl = unique(data_raw{1});         % nm
@@ -204,17 +199,14 @@ if strcmp(distribution, 'gamma')==true
             
             % then we will interpoalte
             % Lets grab all of the values we need in the data set
-            for nn = 1:num_calcs
+            
+            for ii = 3:length(data_raw)                         % The first two values are wavelength and effective radius
                 
-                for ii = 3:length(data_raw)                         % The first two values are wavelength and effective radius
-                    
-                    data = reshape(data_raw{ii}, length(unique(data_raw{2})),[]);
-                    yq(nn,ii-2) = interp2(WL, R_eff, data, xq(nn,1), xq(nn,2));
-                    
-                end
-                
+                data = reshape(data_raw{ii}, length(unique(data_raw{2})),[]);
+                yq(:,ii-2) = interp2(WL, R_eff, data, xq(:,1), xq(:,2));
                 
             end
+            
             
             % Lets include the wavelength and effective radius in the
             % interpolated data cube
@@ -250,8 +242,6 @@ elseif strcmp(distribution, 'mono')==true
         data = textscan(file_id, format_spec, 'CommentStyle','#', 'Delimiter',...
             {'\r', ' '}, 'MultipleDelimsAsOne',1);
         data = reshape(data{1},100,[]);                                     % rehsape the data into a matrix
-        % Set up the zero array
-        yq = zeros(1,num_calcs);                                           % The first two rows are not needed
         
         
         % -- Define the boundaries of interpolation for wavelength and radius --
@@ -259,7 +249,7 @@ elseif strcmp(distribution, 'mono')==true
         wavelength_bounds = [100, 3000];            % nanometers - wavelength boundaries
         r_eff_bounds = [1, 100];                    % microns - effective radius boundaries
         
-
+        
         % ---- Create the grids for interpolation ----
         
         wl = wavelength_bounds(1):1:wavelength_bounds(2);         % nm
@@ -269,7 +259,7 @@ elseif strcmp(distribution, 'mono')==true
         
         
         
-        if any(xq(:,1)<= wavelength_bounds(1)) || any(xq(:,1)>=wavelength_bounds(2)) || any(xq(:,2) <= r_eff_bounds(1)) || any(xq(:,2) >= r_eff_bounds(2))
+        if any(xq(:,1)< wavelength_bounds(1)) || any(xq(:,1)>wavelength_bounds(2)) || any(xq(:,2) < r_eff_bounds(1)) || any(xq(:,2) > r_eff_bounds(2))
             
             % if any of these are true, then we will extrapolate
             error(['Query points are outside the bounds of the data set. The acceptable ranges are:',newline,...
@@ -280,15 +270,12 @@ elseif strcmp(distribution, 'mono')==true
             
             % then we will interpoalte
             % Lets grab all of the values we need in the data set
-            for nn = 1:num_calcs
-                
-                yq(nn) = interp2(WL, R_eff, data, xq(nn,1), xq(nn,2));
-                
-            end
+            yq = interp2(WL, R_eff, data, xq(:,1), xq(:,2));
+            
             
             % Lets include the wavelength and effective radius in the
             % interpolated data cube
-            yq = [xq, yq'];
+            yq = [xq, yq];
             
             
             
@@ -296,7 +283,7 @@ elseif strcmp(distribution, 'mono')==true
         
     else
         
-        filename = 'Mie_Properties_4_AVIRIS_1nm_sampling_monodispersed.OUT';
+        filename = 'Mie_calcs_1nm_sampling_monodispersed.OUT';
         format_spec = '%f %f %f %f %f %f %f %f';        % 8 columns of data
         
         file_id = fopen([folder_path,filename]);
@@ -305,7 +292,7 @@ elseif strcmp(distribution, 'mono')==true
             {'\r', ' '}, 'MultipleDelimsAsOne',1);
         
         % Set up the zero array
-        yq = zeros(1,size(data_raw,1)-2);                                           % The first two rows are not needed
+        yq = zeros(num_calcs,size(data_raw,1)-2);                                           % The first two rows are not needed
         
         
         % -- Define the boundaries of interpolation for wavelength and radius --
@@ -313,7 +300,7 @@ elseif strcmp(distribution, 'mono')==true
         wavelength_bounds = [data_raw{1}(1), data_raw{1}(end)];            % nanometers - wavelength boundaries
         r_eff_bounds = [data_raw{2}(1), data_raw{2}(end)];                    % microns - effective radius boundaries
         
-
+        
         % ---- Create the grids for interpolation ----
         
         wl = unique(data_raw{1});         % nm
@@ -340,17 +327,14 @@ elseif strcmp(distribution, 'mono')==true
             
             % then we will interpoalte
             % Lets grab all of the values we need in the data set
-            for nn = 1:num_calcs
+            
+            for ii = 3:length(data_raw)                         % The first two values are wavelength and effective radius
                 
-                for ii = 3:length(data_raw)                         % The first two values are wavelength and effective radius
-                    
-                    data = reshape(data_raw{ii}, length(unique(data_raw{2})),[]);
-                    yq(nn,ii-2) = interp2(WL, R_eff, data, xq(nn,1), xq(nn,2));
-                    
-                end
-                
+                data = reshape(data_raw{ii}, length(unique(data_raw{2})),[]);
+                yq(:,ii-2) = interp2(WL, R_eff, data, xq(:,1), xq(:,2));
                 
             end
+            
             
             % Lets include the wavelength and effective radius in the
             % interpolated data cube

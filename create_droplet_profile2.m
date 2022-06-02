@@ -2,7 +2,7 @@
 % physical assumptions. These are taken from S.Platnick's 2000 paper
 
 % INPUTS:
-%   (1) re_top_bottom - effective droplet radius (microns) - these are the
+%   (1) re_topBottom - effective droplet radius (microns) - these are the
 %   boundary values for the profile you wish to create. You enter them as
 %   a vector in the order specified by the variable name [re_top,
 %   re_bottom].
@@ -39,7 +39,7 @@
 % By Andrew John Buggee
 %%
 
-function re = create_droplet_profile2(re_top_bottom,zT, independentVariable, constraint)
+function re = create_droplet_profile2(re_topBottom,zT, independentVariable, constraint)
 
 
 % ------------------------------------------------------------
@@ -58,7 +58,7 @@ end
 
 % Check to make sure re values are greater than 0
 
-if any(re_top_bottom<0)
+if any(re_topBottom<0)
     
     error([newline,'Effective Radius must be greater than 0.', newline])
 end
@@ -92,13 +92,13 @@ end
 
 % boundary conditions for r as a function of tau
 
-a0 = @(x) re_top_bottom(1)^(2 + 3/x);
-a1 = @(x) re_top_bottom(1)^(2 + 3/x) - re_top_bottom(2)^(2 + 3/x);
+a0 = @(x) re_topBottom(1)^(2 + 3/x);
+a1 = @(x) re_topBottom(1)^(2 + 3/x) - re_topBottom(2)^(2 + 3/x);
 
 % boundary conditions for r as a function of z
 
-b0 = @(x) re_top_bottom(2)^(3/x);
-b1 = @(x) re_top_bottom(1)^(3/x) - re_top_bottom(2)^(3/x);
+b0 = @(x) re_topBottom(2)^(3/x);
+b1 = @(x) re_topBottom(1)^(3/x) - re_topBottom(2)^(3/x);
 
 if strcmp(constraint,'subadiabatic_aloft')
     
