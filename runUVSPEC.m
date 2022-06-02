@@ -37,7 +37,8 @@ computer_name = whatComputer;
 % find the folder where the water cloud files are stored.
 if strcmp(computer_name,'anbu8374')==true
     
-    error([newline,'There is no path for the solar flux data right now!', newline])
+
+    folderSolar = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/data/solar_flux/';
     
 elseif strcmp(computer_name,'andrewbuggee')==true
     
