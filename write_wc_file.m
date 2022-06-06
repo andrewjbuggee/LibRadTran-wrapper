@@ -55,6 +55,20 @@
 %       a gamma distribution with an alpha value of 7, which is typical for
 %       liquid water clouds.
 
+%   (6) homogeneous_str - a string telling the code if the cloud is to be
+%   modeled as homogeneous or not. If homogenous, the code will assume
+%   every single r_e value represents a single cloud with a constant
+%   droplet radius. If non-homogenous, each column of re is assumed to be a
+%   single cloud with a droplet profile.
+%       (a) 'homogenous' - homogenous cloud where the entire cloud can be
+%       modeled as a single layer with constant properties. If this option
+%       is chosen, the code will expect a vector for re, where each entry
+%       represents a different cloud.
+%       (b) 'non-homogeneous' - a non-homogeneous cloud implies a cloud
+%       with multiple layers where the properties vary. If this option is
+%       chosen, the code expects a single column vector for re, or a
+%       matrix, where each column vector represents a cloud
+
 % OUTPUTS:
 %   (1) .Dat file saved in the libRadTran folder:
 %   /.../libRadtran-2.0.4/data/wc
@@ -66,7 +80,7 @@
 
 %%
 
-function [fileName] = write_wc_file(re,tau_c,z_topBottom, H, lambda, distribution_str)
+function [fileName] = write_wc_file(re,tau_c,z_topBottom, lambda, distribution_str, homogeneous_str)
 
 % ------------------------------------------------------------
 % ---------------------- CHECK INPUTS ------------------------
@@ -77,8 +91,8 @@ function [fileName] = write_wc_file(re,tau_c,z_topBottom, H, lambda, distributio
 
 
 if nargin~=6
-    error([newline,'Not enough inputs. Need 5: droplet effective radius, optical depth, altitude',...
-        ' geometric thickness and wavelength.', newline])
+    error([newline,'Not enough inputs. Need 6: droplet effective radius, optical depth, altitude',...
+        ' wavelength, droplet distribution type and the homogeneity type.', newline])
 end
 
 % Check to make sure re is the same length as the altitude vector
@@ -92,6 +106,7 @@ if size(z_topBottom,1)==1 || size(z_topBottom,2)==1
     
     % make sure its a  column vector
     z_topBottom = reshape(z_topBottom,[],1);
+    H = z_topBottom(1) - z_topBottom(2);            % geometric thickness
     
 elseif size(z_topBottom,1)>1 && size(z_topBottom,2)>1
     % if true, then there can only be two rows, and it must be equal in
@@ -103,6 +118,8 @@ elseif size(z_topBottom,1)>1 && size(z_topBottom,2)>1
         error([newline,'z_topBottom must have the same number of columns as re, or a single column that is used for all wc files.', newline])
         
     end
+    
+    H = z_topBottom(:,1) - z_topBottom(:,2);        % geometric cloud thickness
     
 end
 
@@ -118,10 +135,6 @@ if length(tau_c)>1 && length(tau_c)~=size(re,2)
     error([newline,'The toptical depth must be either a single value or a vector equal in legnth to the number of columns in re.', newline])
 end
 
-if length(H)>1 && length(H)~=size(re,2)
-    
-    error([newline,'Cloud depth must be either a single value or a vector equal in legnth to the number of columns in re.', newline])
-end
 
 
 % Lets check to make sure the inputs re, tau_c and z are within the
@@ -152,11 +165,21 @@ if strcmp(distribution_str, 'mono')==false && strcmp(distribution_str, 'gamma')=
 end
 
 
+% Check to make sure the homogeneity string is one of two possible values
+
+if strcmp(homogeneous_str, 'homogeneous')==false && strcmp(homogeneous_str, 'non-homogeneous')==false
+    
+    error([newline,'I dont recognize the homogeneity string. Must be either "homogenous" or "non-homogeneous"', newline])
+end
+
+
+
+
 
 % Lets set up a few warnings incase the values of effective radius are
 % outside the bounds of the Hu and Stamnes or Mie Interpolate
 % parameterization
-if ismatrix(re)==true
+if size(re,1)>1 && size(re,2)>1
     if any(any(re<2.5)) || any(any(re>60))
         warning([newline, 'At least one value in r_{e} is outside the range of the Hu and Stamnes parameterization',newline,...
             'This is the default parameterization used to convert water cloud parameters to optical properites.',newline,...
@@ -264,9 +287,28 @@ if size(re,1)>1 && size(re,2)>1
     
     
     
-elseif size(re,1)==1 || size(re,2)==1
+elseif (size(re,1)==1 || size(re,2)==1) && strcmp(homogeneous_str, 'non-homogeneous')==true
     
     num_files_2write = 1;
+    
+    % re must be a column vector
+    re = reshape(re,[],1);
+    
+    % -------------------------------------------------------------------
+    % ------ open the precomputed mie table and interpolate! ------------
+    % -------------------------------------------------------------------
+    
+    % for writing water cloud files, we only need the extinction efficiency
+    % Since this function is used often, we've created a file with just Q_ext
+    
+    justQ = true;                       % Load the precomputed mie table of only Q_ext values
+    
+    yq = interp_mie_computed_tables([repmat(lambda,numel(re),1), re], distribution_str, justQ);
+    
+    
+elseif (size(re,1)==1 || size(re,2)==1) && strcmp(homogeneous_str, 'homogeneous')==true
+    
+    num_files_2write = length(re);
     
     % re must be a column vector
     re = reshape(re,[],1);
@@ -301,11 +343,12 @@ end
 
 % now we will step through each wc file that needs to be created
 
-% if H is a single value and num_files_2write is greater than 1, we will
+% if tau_c is a single value and num_files_2write is greater than 1, we will
 % repeat it to create a vector with the same length
 if length(H)==1 && num_files_2write>1
     H = repmat(H,num_files_2write,1);
 end
+
 
 % if tau_c is a single value and num_files_2write is greater than 1, we will
 % repeat it to create a vector with the same length
@@ -322,7 +365,15 @@ fileName = cell(1,num_files_2write);
 
 
 % How many layers to model in the cloud?
-nLayers = size(re,1)+1;             % Number of altitude levels we need to define a cloud
+if size(re,1)>1 && size(re,2)>1 && strcmp(homogeneous_str, 'non-homogeneous')==true
+    nLayers = size(re,1)+1;             % Number of altitude levels we need to define a cloud
+elseif (size(re,1)==1 || size(re,2)==1) && strcmp(homogeneous_str, 'non-homogeneous')==true
+    nLayers = length(re)+1;             % Number of altitude levels we need to define a cloud
+elseif (size(re,1)==1 || size(re,2)==1) && strcmp(homogeneous_str, 'homogeneous')==true
+    nLayers = 1;
+    
+end
+
     
 for nn = 1:num_files_2write
     
@@ -337,7 +388,12 @@ for nn = 1:num_files_2write
     
     
     % z must be a column vector
-    z = linspace(z_topBottom(2,nn), z_topBottom(1,nn), nLayers)';                 % km - altitude vector
+    if nLayers==1
+        z = flipud(z_topBottom(:,nn));
+        
+    else
+        z = linspace(z_topBottom(2,nn), z_topBottom(1,nn), nLayers)';                 % km - altitude vector
+    end
     
     
     % -------------------------------------------------------------------
@@ -348,22 +404,24 @@ for nn = 1:num_files_2write
     
     if nLayers>1
         Nc = tau_c(nn)./(pi*trapz((z(1:end-1)-z(1))*1e3,Qext(:,nn).*(re(:,nn)*1e-6).^2));                % m^(-3) - number concentration
+        
+        % Compute Liquid Water Content
+        lwc = 4/3 * pi * rho_liquid_water * (re(:,nn)*1e-6).^3 .* Nc;                    % g/m^3 - grams of water per meter cubed of air
+        
+        % create the water cloud file name
+        fileName{nn} = ['WC_rtop',num2str(round(re(end,nn))),'_rbot',num2str(round(re(1,nn))),'_T',num2str(tau_c(nn)),'_', distribution_str, '.DAT'];
+        
     else
-        Nc = tau_c(nn)./(pi*(H(nn)*1e3)*Qext(nn).*(re*1e-6).^2);                            % m^(-3) - number concentration
+        Nc = tau_c(nn)./(pi*(H(nn)*1e3)*Qext(nn).*(re(nn)*1e-6).^2);                            % m^(-3) - number concentration
+        
+        % Compute Liquid Water Content
+        lwc = 4/3 * pi * rho_liquid_water * (re(nn)*1e-6).^3 .* Nc;                    % g/m^3 - grams of water per meter cubed of air
+        
+        % create the water cloud file name
+        fileName{nn} = ['WC_r',num2str(round(re(nn))),'_T',num2str(round(tau_c(nn))),'_', distribution_str, '.DAT'];
         
     end
     
-    % Compute Liquid Water Content
-    
-    lwc = 4/3 * pi * rho_liquid_water * (re(:,nn)*1e-6).^3 .* Nc;                    % g/m^3 - grams of water per meter cubed of air
-    
-    
-    % Create the water cloud file name
-    if length(re(:,nn))>1
-        fileName{nn} = ['WC_rtop',num2str(round(re(end,nn))),'_rbot',num2str(round(re(1,nn))),'_T',num2str(tau_c(nn)),'_', distribution_str, '.DAT'];
-    else
-        fileName{nn} = ['WC_r',num2str(round(re)),'_T',num2str(round(tau_c)),'_', distribution_str, '.DAT'];
-    end
     
     
     % ------------------------------------------------------------
@@ -377,7 +435,7 @@ for nn = 1:num_files_2write
     % both the effective radius and the LWC need zeros on either boundary,
     % unless if the cloud is at the surface
     
-    if length(re(:,nn))==1
+    if (size(re,1)==1 || size(re,2)==1) && strcmp(homogeneous_str, 'non-homogeneous')==true
         
         if z_topBottom(2)==0
             % If true, then the cloud starts at the surface and we only append
@@ -395,14 +453,32 @@ for nn = 1:num_files_2write
             
         end
         
-    elseif length(re(:,nn))>1
+    elseif (size(re,1)==1 || size(re,2)==1) && strcmp(homogeneous_str, 'homogeneous')==true
+        
+        if z_topBottom(2)==0
+            % If true, then the cloud starts at the surface and we only append
+            % zeros above the cloud
+            re_2write = [re(nn); 0];
+            lwc_2write = [lwc; 0];
+            z_2write = z;
+            
+        else
+            % In this case, we need zeros below the cloud bottom, and at cloud
+            % top
+            z_2write = [0; z];                 % create a value at the surface where the cloud parameters go to zero
+            re_2write = [0; re(nn); 0];
+            lwc_2write = [0; lwc; 0];
+            
+        end
+        
+    elseif (size(re,1)>1 && size(re,2)>1)
         
         % Cloud top height defines the altitude where there is no cloud.
         
         % if the minimum z value is 0 then the cloud is at the surface
         if z_topBottom(2)==0
             % then we only append zeros above the cloud
-            re_2write = [re; 0];
+            re_2write = [re(:,nn); 0];
             lwc_2write = [lwc; 0];
             z_2write = z;
             
