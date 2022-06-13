@@ -106,11 +106,21 @@ for pp = 1:size(inputFileNames,1)
     
 end
 
-% save the relfectance calculation
-save(saveCalcs_filename,"R",'-append'); % save inputSettings to the same folder as the input and output file
+
+% Check to make sure you're in the modis data directory
+
+if strcmp(pwd, inputs.modisDataFolder)==true
+    % save the relfectance calculation
+    save(saveCalcs_filename,"R",'-append'); % save inputSettings to the same folder as the input and output file
         
+else
+    
+    % Change to the proper MODIS data folder
+    cd(inputs.modisDataFolder)
+    % save the relfectance calculation
+    save(saveCalcs_filename,"R",'-append'); % save inputSettings to the same folder as the input and output file
 
-
+end
 
 
 
