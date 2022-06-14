@@ -409,7 +409,7 @@ for nn = 1:num_files_2write
         lwc = 4/3 * pi * rho_liquid_water * (re(:,nn)*1e-6).^3 .* Nc;                    % g/m^3 - grams of water per meter cubed of air
         
         % create the water cloud file name
-        fileName{nn} = ['WC_rtop',num2str(round(re(end,nn))),'_rbot',num2str(round(re(1,nn))),'_T',num2str(tau_c(nn)),'_', distribution_str, '.DAT'];
+        fileName{nn} = ['WC_rtop',num2str(round(re(end,nn))),'_rbot',num2str(round(re(1,nn))),'_T',num2str(round(tau_c(nn))),'_', distribution_str, '.DAT'];
         
     else
         Nc = tau_c(nn)./(pi*(H(nn)*1e3)*Qext(nn).*(re(nn)*1e-6).^2);                            % m^(-3) - number concentration
