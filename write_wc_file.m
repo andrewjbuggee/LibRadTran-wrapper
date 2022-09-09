@@ -60,7 +60,7 @@
 %   every single r_e value represents a single cloud with a constant
 %   droplet radius. If non-homogenous, each column of re is assumed to be a
 %   single cloud with a droplet profile.
-%       (a) 'homogenous' - homogenous cloud where the entire cloud can be
+%       (a) 'homogeneous' - homogenous cloud where the entire cloud can be
 %       modeled as a single layer with constant properties. If this option
 %       is chosen, the code will expect a vector for re, where each entry
 %       represents a different cloud.
