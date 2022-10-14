@@ -24,13 +24,15 @@
 
 % OUTPUTS:
 %   (1) yq - the values of each mie parameter interpolated at the locations
-%   specified by xq. The parameters calculated in the look up table are:
-%       (a) refrac_real - real part of the refractive index
-%       (b) refrac_imag - imaginary part of the refractive index
-%       (c) q_ext - the extinction efficiency
-%       (d) omega - the single scattering albedo
-%       (e) gg - asymmetry parameter
-%       (f) q_scat - scattering efficiency
+%   specified by xq. The variables in the output matrix are:
+%       (a) wavelength (nm)
+%       (b) effective radius (microns)
+%       (c) refrac_real - real part of the refractive index
+%       (d) refrac_imag - imaginary part of the refractive index
+%       (e) q_ext - the extinction efficiency
+%       (f) omega - the single scattering albedo
+%       (g) gg - asymmetry parameter
+%       (h) q_scat - scattering efficiency
 
 % All look up tables were computed using the opensoure radiative transfer
 % code, LibRadTran
@@ -127,7 +129,7 @@ if strcmp(distribution, 'gamma')==true
         
         [WL, R_eff] = meshgrid(wl,r_eff);                       % Meshgrid for inerpolation
         
-        if any(xq(:,1)< wavelength_bounds(1)) || any(xq(:,1)>wavelength_bounds(2)) || any(xq(:,2) < r_eff_bounds(1)) || any(xq(:,2) > r_eff_bounds(2))
+        if any(xq(:,1) < wavelength_bounds(1)) || any(xq(:,1) > wavelength_bounds(2)) || any(xq(:,2) < r_eff_bounds(1)) || any(xq(:,2) > r_eff_bounds(2))
             
             % if any of these are true, then we will extrapolate
             error(['Query points are outside the bounds of the data set. The acceptable ranges are:',newline,...
@@ -188,7 +190,7 @@ if strcmp(distribution, 'gamma')==true
         % and issue a warning
         % ------------------------------------------------------------
         
-        if any(xq(:,1)<= wavelength_bounds(1)) || any(xq(:,1)>=wavelength_bounds(2)) || any(xq(:,2) <= r_eff_bounds(1)) || any(xq(:,2) >= r_eff_bounds(2))
+        if any(xq(:,1) < wavelength_bounds(1)) || any(xq(:,1) > wavelength_bounds(2)) || any(xq(:,2) < r_eff_bounds(1)) || any(xq(:,2) > r_eff_bounds(2))
             
             % if any of these are true, then we will extrapolate
             error(['Query points are outside the bounds of the data set. The acceptable ranges are:',newline,...
@@ -259,7 +261,7 @@ elseif strcmp(distribution, 'mono')==true
         
         
         
-        if any(xq(:,1)< wavelength_bounds(1)) || any(xq(:,1)>wavelength_bounds(2)) || any(xq(:,2) < r_eff_bounds(1)) || any(xq(:,2) > r_eff_bounds(2))
+        if any(xq(:,1) < wavelength_bounds(1)) || any(xq(:,1) > wavelength_bounds(2)) || any(xq(:,2) < r_eff_bounds(1)) || any(xq(:,2) > r_eff_bounds(2))
             
             % if any of these are true, then we will extrapolate
             error(['Query points are outside the bounds of the data set. The acceptable ranges are:',newline,...
@@ -283,16 +285,27 @@ elseif strcmp(distribution, 'mono')==true
         
     else
         
+        % The data file will be parsed into 8 cells of data
+        %   (1) wavelength
+        %   (2) effective radius
+        %   (3) index of refraction real
+        %   (4) index of refraction imaginary
+        %   (5) Extinction efficiency
+        %   (6) single scattering albedo
+        %   (7) asymmetry parameter
+        %   (8) scattering efficiency
+        
         filename = 'Mie_calcs_1nm_sampling_monodispersed.OUT';
         format_spec = '%f %f %f %f %f %f %f %f';        % 8 columns of data
         
+
         file_id = fopen([folder_path,filename]);
         
         data_raw = textscan(file_id, format_spec, 'CommentStyle','#', 'Delimiter',...
             {'\r', ' '}, 'MultipleDelimsAsOne',1);
         
         % Set up the zero array
-        yq = zeros(num_calcs,size(data_raw,1)-2);                                           % The first two rows are not needed
+        yq = zeros(num_calcs,length(data_raw)-2);                                           % The first two rows are not needed
         
         
         % -- Define the boundaries of interpolation for wavelength and radius --
@@ -316,7 +329,7 @@ elseif strcmp(distribution, 'mono')==true
         % and issue a warning
         % ------------------------------------------------------------
         
-        if any(xq(:,1)<= wavelength_bounds(1)) || any(xq(:,1)>=wavelength_bounds(2)) || any(xq(:,2) <= r_eff_bounds(1)) || any(xq(:,2) >= r_eff_bounds(2))
+        if any(xq(:,1)< wavelength_bounds(1)) || any(xq(:,1)>wavelength_bounds(2)) || any(xq(:,2) < r_eff_bounds(1)) || any(xq(:,2) > r_eff_bounds(2))
             
             % if any of these are true, then we will extrapolate
             error(['Query points are outside the bounds of the data set. The acceptable ranges are:',newline,...
@@ -328,9 +341,9 @@ elseif strcmp(distribution, 'mono')==true
             % then we will interpoalte
             % Lets grab all of the values we need in the data set
             
-            for ii = 3:length(data_raw)                         % The first two values are wavelength and effective radius
+            for ii = 3:length(data_raw)                         % The first two columns of data are wavelength and effective radius
                 
-                data = reshape(data_raw{ii}, length(unique(data_raw{2})),[]);
+                data = reshape(data_raw{ii}, length(unique(data_raw{2})),[]);               % variables vaires with effective radius along rows and wavelength along columns
                 yq(:,ii-2) = interp2(WL, R_eff, data, xq(:,1), xq(:,2));
                 
             end
