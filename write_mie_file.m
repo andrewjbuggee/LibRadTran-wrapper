@@ -20,7 +20,7 @@
 
 %%
 
-function [fileName] = write_mie_file(mie_program, index_refraction,re,wavelength, distribution_str, distribution_width, err_msg_str)
+function [input_filename, output_filename, mie_folder] = write_mie_file(mie_program, index_refraction,re,wavelength, distribution_str, distribution_width, err_msg_str)
 
 % ------------------------------------------------------------
 % ---------------------- CHECK INPUTS ------------------------
@@ -48,9 +48,9 @@ if strcmp(mie_program, 'MIEV0')==false && strcmp(mie_program, 'BH')==false
     error([newline,'I dont recognize the mie program. Must be either "MIEV0" or "BH"', newline])
 end
 
-% Create the file name
-fileName = ['Mie_calc_',distribution_str,'_distribution','.INP'];
-
+% Create the input and output filename
+input_filename = ['Mie_calc_',distribution_str,'_distribution','.INP'];
+output_filename = ['OUTPUT_',input_filename(1:end-4)];
 
 
 % Determine which computer you're using
@@ -60,11 +60,11 @@ computer_name = whatComputer;
 % find the folder where the water cloud files are stored.
 if strcmp(computer_name,'anbu8374')==true
 
-    mie_calc_folder_path = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/Mie_Calculations/';
+    mie_folder = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/Mie_Calculations/';
 
 elseif strcmp(computer_name,'andrewbuggee')==true
 
-    mie_calc_folder_path = '/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval/LibRadTran/libRadtran-2.0.4/Mie_Calculations/';
+    mie_folder = '/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval/LibRadTran/libRadtran-2.0.4/Mie_Calculations/';
 
 end
 
@@ -80,7 +80,7 @@ comments = {'# Mie code to use', '# refractive index to use', '# specify effecti
     '# Define interval of wavelength sampling', '# define output variables','# error file length'};
 
 % Create the water cloud file
-fileID = fopen([mie_calc_folder_path,fileName], 'w');
+fileID = fopen([mie_folder,input_filename], 'w');
 
 % fprintf writes lines in our text file from top to botom
 % .INP files for mie calculations always require the same inputs
@@ -88,26 +88,28 @@ fileID = fopen([mie_calc_folder_path,fileName], 'w');
 % to write column vectors in a text file, we have to store them as row
 % vectors
 
-
+% ----------------------------------
 % Define the mie program code to use
+% ----------------------------------
 
 fprintf(fileID, '%11s %5s          %s \n','mie_program',mie_program,comments{1});
 
+
+
+
+
+% ----------------------------------
+% Define the Index of Refraction!
+% ----------------------------------
 
 % check to see if the index of refraction is a string or a number
 if isstring(index_refraction)==true || ischar(index_refraction)==true
     fprintf(fileID, '%6s %s          %s \n','refrac', index_refraction, comments{2});
 elseif isnumeric(index_refraction)==true
-    % if true we need a line for the real part and a line for the
-    % imaginary part
-    if isempty(real(index_refraction))==false
-        fprintf(fileID, '%11s %f          %s \n','refrac_real', real(index_refraction), comments{2});
-    end
-
-    if isempty(imag(index_refraction))==false
-        fprintf(fileID, '%11s %f          %s \n','refrac_imag', imag(index_refraction), comments{2});
-    end
-
+    % if true we to tell the code we have a user input value for the index
+    % of refraction. NOTE: both the real and compelx parts have to be
+    % entered as positive numbers
+    fprintf(fileID, '%11s %f %f          %s \n','refrac user', real(index_refraction), imag(index_refraction), comments{2});
 
 else
 
@@ -115,18 +117,22 @@ else
 end
 
 
+
+% ---------------------------------------------------------------------
 % Write in the value for the modal radius. Check to see if its a vector
+% ---------------------------------------------------------------------
+
 if length(re)>1
     re_start = re(1);
     re_end = re(end);
     re_jump = re(2) - re(1);
 
-    fprintf(fileID,'%5s %f %f %f          %s \n', 'r_eff', re_start, re_end, re_jump, comments{3});
+    fprintf(fileID,'%5s %3.2f %3.2f %3.2f          %s \n', 'r_eff', re_start, re_end, re_jump, comments{3});
 
 elseif length(re)==1
 
     % there is only a single value for re
-    fprintf(fileID,'%5s %3f          %s \n', 'r_eff', re, comments{3});
+    fprintf(fileID,'%5s %3.2f          %s \n', 'r_eff', re, comments{3});
 
 else
 
@@ -135,7 +141,13 @@ else
 end
 
 
+
+
+
+% ----------------------------------------------------------------
 % Write in the value for the droplet distribution, if its not mono
+% ----------------------------------------------------------------
+
 if strcmp(distribution_str,'gamma')==true
 
     fprintf(fileID,'%12s %5s %f         %s \n', 'distribution', distribution_str, distribution_width, comments{4});
@@ -155,20 +167,24 @@ else
 end
 
 
-% define the wavelength range
 
+
+% ---------------------------
+% define the wavelength range
+% ---------------------------
 if length(wavelength)>1
     wavelength_start = wavelength(1);
     wavelength_end = wavelength(end);
     wavelength_jump = wavelength(2) - wavelength(1);
 
-    fprintf(fileID,'%10s  %f %f          %s \n', 'wavelength', wavelength_start, wavelength_end, comments{5});
-    fprintf(fileID,'%15s  %f          %s \n', 'wavelength_step', wavelength_jump, comments{6});
+    fprintf(fileID,'%10s  %5.2f %5.2f          %s \n', 'wavelength', wavelength_start, wavelength_end, comments{5});
+    fprintf(fileID,'%15s  %5.2f          %s \n', 'wavelength_step', wavelength_jump, comments{6});
 
 elseif length(wavelength)==1
 
-    % there is only a single value for wavelength
-    fprintf(fileID,'%10s  %f          %s \n', 'wavelength', wavelength, comments{5});
+    % there is only a single value for wavelength but we still need to tell
+    % the code a start and end wavelength, so we give the same value
+    fprintf(fileID,'%10s  %5.2f %5.2f          %s \n', 'wavelength', wavelength, wavelength, comments{5});
 
 else
 
@@ -177,14 +193,26 @@ else
 end
 
 
+
+
+
+
+% ---------------------------
 % Define the output variables
+% ---------------------------
+
 % But first make a comment
 fprintf(fileID,'\n%s \n', comments{7});
 fprintf(fileID,'%11s  %s %s %s %s %s %s %s %s \n', 'output_user','lambda', 'r_eff', 'refrac_real',...
     'refrac_imag', 'qext', 'omega', 'gg', 'qsca');
 
 
+
+
+
+% -----------------------
 % Print the error message
+% -----------------------
 fprintf(fileID, '%s          %s', err_msg_str, comments{8});
 
 
