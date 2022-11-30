@@ -108,8 +108,8 @@ num_radii = sum(index); % this is the number of different radii computed by the 
        index_radii = (rr:num_radii:size(data,1))'; % index to pull out calculations with a constant radius
          
        if rr ==1
-           wavelength = data(index_radii,1); % grab the wavelength values
-           r_eff = data(1:num_radii,2);         % grab the values for effective radii
+           wavelength = data(index_radii,1); % grab the wavelength values - they vary across rows
+           r_eff = data(1:num_radii,2)';         % grab the values for effective radii - they varry across columns
            refrac_real = data(index_radii,3); % grab the real part of the refractive index
            refrac_imag = data(index_radii,4); % grab the imagniary part of the refractive index
        end
