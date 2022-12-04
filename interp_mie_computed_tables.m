@@ -295,7 +295,7 @@ elseif strcmp(distribution, 'mono')==true
         %   (7) asymmetry parameter
         %   (8) scattering efficiency
         
-        filename = 'Mie_calcs_1nm_sampling_monodispersed.OUT';
+        filename = 'Mie_calcs_monodispersed_Wiscombe.OUT';
         format_spec = '%f %f %f %f %f %f %f %f';        % 8 columns of data
         
 
