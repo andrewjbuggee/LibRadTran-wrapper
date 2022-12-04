@@ -7,10 +7,12 @@
 %   a vector in the order specified by the variable name [re_top,
 %   re_bottom].
 
-%   (2) zT - the vertical independent variable (km), which is 
+%   (2) zT - the vertical independent variable, which is 
 %   either geometric altitude or optical depth. If using geometric altitude
 %   (z), this variable should be defined in units of kilometers and should
-%   start with z_bottom and progress towards z_top. 
+%   start with z_bottom and progress towards z_top. If using optical depth
+%   (tau), this vector should start with 0 (cloud top) and end with the
+%   total cloud optical thickness.
 
 %   (3) independent varaible - a string that tells the code what the
 %   vertical indepdendent variable is. There are two possible inputs here:
