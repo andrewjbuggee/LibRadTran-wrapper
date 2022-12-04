@@ -68,7 +68,7 @@ end
 
 
 % The first cell entry in "distribution" is the distribution type. The
-% second cell entry is the distribution width. 
+% second cell entry is the distribution width.
 
 if strcmp(distribution{1}, 'mono')==false && strcmp(distribution{1}, 'gamma')==false
 
@@ -220,29 +220,44 @@ for ff = 1:numFiles
     % ---------------------------------------------------------------------
     % Write in the value for the modal radius. Check to see if its a vector
     % ---------------------------------------------------------------------
-    
-    % The input vector re is ordered as follows: re = [r_start, r_end,
-    % r_step]
 
-    re_start = re(1);
-    re_end = re(2);
-    re_step = re(3);
-    
-    % The step value has to be written with many significant digits to
-    % ensure rounding doesn't prevent the full vector from being computed.
-    if re_start~=re_end && re_step~=0
-        fprintf(fileID,'%5s %3.2f %3.2f %3.12f          %s \n', 'r_eff', re_start, re_end, re_step, comments{3});
+    if length(re)==3
+        % If this is true, we create an equally spaced radial vector
 
-    elseif re_start==re_end && re_step==0
+        % The input vector re is ordered as follows: re = [r_start, r_end,
+        % r_step]
 
-        % there is only a single value for re
-        fprintf(fileID,'%5s %3.2f          %s \n', 'r_eff', re(1), comments{3});
+        re_start = re(1);
+        re_end = re(2);
+        re_step = re(3);
+
+        % The step value has to be written with many significant digits to
+        % ensure rounding doesn't prevent the full vector from being computed.
+        if re_start~=re_end && re_step~=0
+            fprintf(fileID,'%5s %3.2f %3.2f %3.12f          %s \n', 'r_eff', re_start, re_end, re_step, comments{3});
+
+        elseif re_start==re_end && re_step==0
+
+            % there is only a single value for re
+            fprintf(fileID,'%5s %3.2f          %s \n', 'r_eff', re(1), comments{3});
+
+        else
+
+            error([newline, 'The input r_eff is an empty array', newline])
+
+        end
+
+    elseif length(re)==1
+
+        % If this is true, then there is only a single radius value to compute
+        fprintf(fileID,'%5s %3.5f          %s \n', 'r_eff', re, comments{3});
 
     else
 
-        error([newline, 'The input r_eff is an empty array', newline])
+        error([newline,'There can only be a single entry for the raidus, or 3 entries that define a vector.',newline])
 
     end
+
 
 
 
@@ -280,7 +295,7 @@ for ff = 1:numFiles
     wavelength_end = wavelength(2);
     wavelength_jump = wavelength(3);
 
-    if wavelength_start~=wavelength_end && wavelength_jump~=0 
+    if wavelength_start~=wavelength_end && wavelength_jump~=0
 
         fprintf(fileID,'%10s  %5.2f %5.2f          %s \n', 'wavelength', wavelength_start, wavelength_end, comments{5});
         fprintf(fileID,'%15s  %5.2f          %s \n', 'wavelength_step', wavelength_jump, comments{6});
