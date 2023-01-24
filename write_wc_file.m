@@ -385,7 +385,7 @@ end
 % if tau_c is a single value and num_files_2write is greater than 1, we will
 % repeat it to create a vector with the same length
 if length(H)==1 && num_files_2write>1
-    H = repmat(H,num_files_2write,1);
+    H = repmat(H,num_files_2write,1);           % km - geometric thickness
 end
 
 
@@ -436,7 +436,7 @@ for nn = 1:num_files_2write
 
 
     % -------------------------------------------------------------------
-    % ------------------- compute number concentration ------------------
+    % ------ compute number concentration and liquid water content ------
     % -------------------------------------------------------------------
 
     % we need a number concentration for each file that is created
