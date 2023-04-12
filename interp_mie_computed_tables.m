@@ -232,7 +232,7 @@ elseif strcmp(distribution, 'mono')==true
     if justQ_flag==true
         
         % if this is true, we only load the Q_ext calculations!
-        filename = 'Q_ext_1nm_sampling_monodispersed.txt';
+        filename = 'Q_ext_1nm_sampling_monodispersed_radii_1_to_100_microns.txt';
         format_spec = '%f';        % 1 column of data
         
         
@@ -295,7 +295,7 @@ elseif strcmp(distribution, 'mono')==true
         %   (7) asymmetry parameter
         %   (8) scattering efficiency
         
-        filename = 'Mie_calcs_monodispersed_Wiscombe.OUT';
+        filename = 'Mie_calcs_monodispersed_radii_1_to_100_microns.OUT';
         format_spec = '%f %f %f %f %f %f %f %f';        % 8 columns of data
         
 

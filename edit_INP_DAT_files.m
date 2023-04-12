@@ -63,7 +63,7 @@ elseif iscell(newExpr)==true
         end
         
         % save the edited text as a new file in the new folder
-        writematrix(oldText,[newFolder,newFile],'Delimiter',' ','FileType','text','QuoteStrings',0);
+        writematrix(oldText,[newFolder,newFile],'Delimiter',' ','FileType','text','QuoteStrings','none');
         
         
     elseif length(oldExpr) ~= length(newExpr)

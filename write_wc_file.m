@@ -36,10 +36,6 @@
 %   is a matrix, and z_topBottom is a vector, then this will be used for
 %   every wc file.
 
-%   (4) H - geometric thickness of the cloud (kilometers) - this is a
-%   single value that defines the total geometric cloud thickness. For
-%   multiple wc files, this must be a vector. If re is a matrix and H is a
-%   single value, this value will be used for every wc file
 
 %   (5) lambda - wavelength that defines the cloud optical depth
 %   (nanometers) - This is the wavelength that defines the cloud optical
