@@ -232,7 +232,7 @@ elseif strcmp(distribution, 'mono')==true
     if justQ_flag==true
         
         % if this is true, we only load the Q_ext calculations!
-        filename = 'Q_ext_1nm_sampling_monodispersed_radii_1_to_100_microns.txt';
+        filename = 'Q_ext_1nm_sampling_monodispersed_radii_1_to_500_microns_reduced.txt';
         format_spec = '%f';        % 1 column of data
         
         
@@ -243,19 +243,20 @@ elseif strcmp(distribution, 'mono')==true
         
         data = textscan(file_id, format_spec, 'CommentStyle','#', 'Delimiter',...
             {'\r', ' '}, 'MultipleDelimsAsOne',1);
-        data = reshape(data{1},100,[]);                                     % rehsape the data into a matrix
+        data = reshape(data{1},340,[]);                                     % rehsape the data into a matrix
         
         
         % -- Define the boundaries of interpolation for wavelength and radius --
         
         wavelength_bounds = [100, 3000];            % nanometers - wavelength boundaries
-        r_eff_bounds = [1, 100];                    % microns - effective radius boundaries
+        r_eff_bounds = [1, 500];                    % microns - effective radius boundaries
         
         
         % ---- Create the grids for interpolation ----
         
         wl = wavelength_bounds(1):1:wavelength_bounds(2);         % nm
-        r_eff = r_eff_bounds(1):1:r_eff_bounds(2);                % microns
+        % From the defined radii values listed in the file above
+        r_eff = [r_eff_bounds(1):300, 305:5:r_eff_bounds(2)];                % microns
         
         [WL, R_eff] = meshgrid(wl,r_eff);                       % Meshgrid for inerpolation
         
@@ -295,7 +296,7 @@ elseif strcmp(distribution, 'mono')==true
         %   (7) asymmetry parameter
         %   (8) scattering efficiency
         
-        filename = 'Mie_calcs_monodispersed_radii_1_to_100_microns.OUT';
+        filename = 'Mie_calcs_monodispersed_Bohren_Huffmam_radii_1_to_500_microns_reduced_file.txt';
         format_spec = '%f %f %f %f %f %f %f %f';        % 8 columns of data
         
 
