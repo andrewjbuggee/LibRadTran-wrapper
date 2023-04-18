@@ -13,7 +13,10 @@
 %   files, where the number of columns is equal to the number of wc files
 %   created. The number of rows is equal to the number of layers modeled.
 %   To create many water cloud files at once that model a homogenous cloud,
-%   simply set the column vectors of re to be identical values.
+%   simply set the column vectors of re to be identical values. 
+%   ***IMPORTANT*** the re values must start at the cloud bottom with the
+%   first value (or row). The last value (or row) is the droplet size at
+%   cloud top.
 
 %   (2) tau_c - cloud optical depth (unitless) - this is the cloud optical
 %   depth, which is a monochromatic calculation. There is a single value
@@ -38,35 +41,44 @@
 
 
 %   (5) lambda - wavelength that defines the cloud optical depth
-%   (nanometers) - This is the wavelength that defines the cloud optical
-%   depth. If creating a single wc file, lambda is a single value. If
+%   (nanometers) - If creating a single wc file, lambda is a single value. If
 %   creating multiple wc files, lambda is a vector equal in length to the
 %   number of columns of re. If re is a matrix and lambda is a single
 %   value, this value will be used for each wc file created.
 
-%   (6) distribution_str - a string telling the code with droplet size
+%   (6) distribution_str - a string telling the code which droplet size
 %   distribution to use  - One can chose from two options:
 %       (a) 'mono' - monodispersed distribution
 %       (b) 'gamma' - gamma droplet distribution. By default this will use
 %       a gamma distribution with an alpha value of 7, which is typical for
-%       liquid water clouds.
+%       liquid water clouds. *** IMPORTANT *** For now, this function will NOT
+%       use precomputed mie calculations using a gamma droplet
+%       distribution. The values returned by LibRadTran appear erroneously
+%       high. Instead, if one wished to use a gamma droplet distribution,
+%       the homogenous pre-computed mie table will be used to retrieved mie
+%       properties, and then this code will integrate those values over the
+%       size distribution.
 
-%   (6) homogeneous_str - a string telling the code if the cloud is to be
-%   modeled as homogeneous or not. If homogenous, the code will assume
-%   every single r_e value represents a single cloud with a constant
-%   droplet radius. If non-homogenous, each column of re is assumed to be a
-%   single cloud with a droplet profile.
-%       (a) 'homogeneous' - homogenous cloud where the entire cloud can be
+%   (6) distribution_var - the variance of the size distribution, if
+%   applicable. If one is modelling a homogenous cloud, this input will be
+%   ignored, and the value can be anything.
+
+%   (7) vert_homogeneity_str - a string telling the code if the cloud is to be
+%   modeled as vertically homogeneous. If vertically homogenous, the code will
+%   assume every single r_e value represents a single cloud with a constant
+%   droplet radius. If vertically non-homogenous, each column of re is assumed
+%   to be a single cloud with a droplet profile.
+%       (a) 'vert-homogeneous' - homogenous cloud where the entire cloud can be
 %       modeled as a single layer with constant properties. If this option
 %       is chosen, the code will expect a vector for re, where each entry
 %       represents a different cloud.
-%       (b) 'non-homogeneous' - a non-homogeneous cloud implies a cloud
+%       (b) 'vert-non-homogeneous' - a non-homogeneous cloud implies a cloud
 %       with multiple layers where the properties vary. If this option is
 %       chosen, the code expects a single column vector for re, or a
 %       matrix, where each column vector represents a cloud
 
 
-%   (7) parameterization_str - a string telling the code which
+%   (8) parameterization_str - a string telling the code which
 %   parameterization to use when using optical depth and droplet radius to
 %   compute the liquid water content. There are 2 options
 %       (a) 'mie' - this option uses a pre-computed mie table and
@@ -87,19 +99,21 @@
 
 %%
 
-function [fileName] = write_wc_file(re,tau_c,z_topBottom, lambda, distribution_str, homogeneous_str, parameterization_str)
+function [fileName] = write_wc_file(re,tau_c,z_topBottom, lambda, distribution_str,distribution_var,...
+    vert_homogeneous_str, parameterization_str)
 
 % ------------------------------------------------------------
 % ---------------------- CHECK INPUTS ------------------------
 % ------------------------------------------------------------
 
-% Check to make sure there are 3 inputs, droplet radius, cloud optical
+% Check to make sure there are 8 inputs, droplet radius, cloud optical
 % depth, and the altitude vector associated with this cloud
 
 
-if nargin~=7
-    error([newline,'Not enough inputs. Need 6: droplet effective radius, optical depth, altitude',...
-        ' wavelength, droplet distribution type, homogeneity type and the parameterization used to compute LWC.', newline])
+if nargin~=8
+    error([newline,'Not enough inputs. Need 8: droplet effective radius, optical depth, altitude',...
+        [' wavelength, droplet distribution type, variance of the droplet distribution,...' ...
+        ' homogeneity type and the parameterization used to compute LWC.'], newline])
 end
 
 % Check to make sure re is the same length as the altitude vector
@@ -143,27 +157,6 @@ if length(tau_c)>1 && length(tau_c)~=size(re,2)
 end
 
 
-
-% Lets check to make sure the inputs re, tau_c and z are within the
-% reasonble bounds
-
-% -- Define the boundaries of interpolation for wavelength and radius --
-
-wavelength_bounds = [100, 3000];            % nanometers - wavelength boundaries
-r_eff_bounds = [1, 100];                    % microns - effective radius boundaries
-
-% if lambda<wavelength_bounds(1) || lambda>wavelength_bounds(2)
-%
-%     error([newline, 'Wavelength is out of the range for Mie calculations. Must be between [0, 3000] nm.', newline])
-%
-% end
-%
-% if any(re<r_eff_bounds(1)) || any(re>r_eff_bounds(2))
-%
-%     error([newline, 're is out of the range for Mie calculations. Must be between [1, 100] microns.', newline])
-%
-% end
-
 % Check to make sure the distribution string is one of two possible values
 
 if strcmp(distribution_str, 'mono')==false && strcmp(distribution_str, 'gamma')==false
@@ -174,9 +167,9 @@ end
 
 % Check to make sure the homogeneity string is one of two possible values
 
-if strcmp(homogeneous_str, 'homogeneous')==false && strcmp(homogeneous_str, 'non-homogeneous')==false
+if strcmp(vert_homogeneous_str, 'vert-homogeneous')==false && strcmp(vert_homogeneous_str, 'vert-non-homogeneous')==false
 
-    error([newline,'I dont recognize the homogeneity string. Must be either "homogenous" or "non-homogeneous"', newline])
+    error([newline,'I dont recognize the homogeneity string. Must be either "vert-homogenous" or "vert-non-homogeneous"', newline])
 end
 
 
@@ -243,18 +236,16 @@ end
 % ---------------------- COMPUTE LWC -------------------------
 % ------------------------------------------------------------
 
-% -------------------------------------------------
-% ----- I have to fudge the density of water ------
-% This is the only way I can get my estimates of optical depth to match
-% LibRadTrans estimates
 
-rho_liquid_water = 959900;              % grams/m^3 - density of liquid water
-%rho_liquid_water = 1e6;                 % grams/cm^3 - density of liquid water at 0 C
+rho_liquid_water = 1e6;                 % grams/cm^3 - density of liquid water at 0 C
 % --------------------------------------------------
 
 
 % --- STEP THROUGH COLUMNS OF re -----
 
+% if re is a matrix, the code assumes that each column vector is a single
+% cloud with a vertically-inhomogenous droplet profile defined by the
+% values in the column
 if size(re,1)>1 && size(re,2)>1
 
     % We want to get all the mie properties we need before we loop through
@@ -288,13 +279,68 @@ if size(re,1)>1 && size(re,2)>1
             % create identical column vecotrs
             lambda = repmat(lambda,size(re,1),1);
 
-            yq = interp_mie_computed_tables([lambda(:), re(:)], distribution_str, justQ);
+
+            % **** ONLY INTERPOLATING HOMOGENOUS MIE COMPUTATIONS ****
+            % ********************************************************
+            % IF GAMMA DISTRIBUTION DESIRED, CODE WILL MANUALLY
+            % INTEGRATE OVER THE SIZE DISTRIBUTION DEFINED
+
+            if strcmp(distribution_str,'gamma')==true
+
+                % If we wish to estimate the mie properties of liquid water
+                % for a distribution of droplets, then we can skip the
+                % pre-computed mie tables and estimate the values using the
+                % average_mie_over_size_distribution directly
+
+                % This function only deals with liquid water clouds
+                % define the index of refraction
+                index_of_refraction = 'water';
+
+                % integrate over a size distribution to get an average
+                [~, Qavg, ~] = average_mie_over_size_distribution(re, distribution_var, lambda,...
+                    index_of_refraction, distribution_str);
+
+            elseif strcmp(distribution_str,'mono')==true
+                yq = interp_mie_computed_tables([repmat(lambda,numel(re),1), re], 'mono', justQ);
+
+            else
+
+                error([newline,'Invaled distribution type',newline])
+
+            end
 
 
 
         elseif length(lambda)==1
 
-            yq = interp_mie_computed_tables([repmat(lambda,numel(re),1), re(:)], distribution_str, justQ);
+            % **** ONLY INTERPOLATING HOMOGENOUS MIE COMPUTATIONS ****
+            % ********************************************************
+            % IF GAMMA DISTRIBUTION DESIRED, CODE WILL MANUALLY
+            % INTEGRATE OVER THE SIZE DISTRIBUTION DEFINED
+
+            if strcmp(distribution_str,'gamma')==true
+
+                % If we wish to estimate the mie properties of liquid water
+                % for a distribution of droplets, then we can skip the
+                % pre-computed mie tables and estimate the values using the
+                % average_mie_over_size_distribution directly
+
+                % This function only deals with liquid water clouds
+                % define the index of refraction
+                index_of_refraction = 'water';
+
+                % integrate over a size distribution to get an average
+                [~, Qavg, ~] = average_mie_over_size_distribution(re, distribution_var, lambda,...
+                    index_of_refraction, distribution_str);
+
+            elseif strcmp(distribution_str,'mono')==true
+                yq = interp_mie_computed_tables([repmat(lambda,numel(re),1), re], 'mono', justQ);
+
+            else
+
+                error([newline,'Invaled distribution type',newline])
+
+            end
 
         end
 
@@ -308,7 +354,11 @@ if size(re,1)>1 && size(re,2)>1
 
 
 
-elseif (size(re,1)==1 || size(re,2)==1) && strcmp(homogeneous_str, 'non-homogeneous')==true
+
+    % if re is a vector and the vertically homogeneity is defined as
+    % 'vert-non-homogeneous' then the the code assumes the vector defines a
+    % single cloud with a droplet profile
+elseif (size(re,1)==1 || size(re,2)==1) && strcmp(vert_homogeneous_str, 'vert-non-homogeneous')==true
 
     num_files_2write = 1;
 
@@ -326,7 +376,38 @@ elseif (size(re,1)==1 || size(re,2)==1) && strcmp(homogeneous_str, 'non-homogene
 
     if strcmp(parameterization_str,'mie')==true
 
-        yq = interp_mie_computed_tables([repmat(lambda,numel(re),1), re], distribution_str, justQ);
+        % **** ONLY INTERPOLATING HOMOGENOUS MIE COMPUTATIONS ****
+        % ********************************************************
+        % IF GAMMA DISTRIBUTION DESIRED, CODE WILL MANUALLY
+        % INTEGRATE OVER THE SIZE DISTRIBUTION DEFINED
+
+        if strcmp(distribution_str,'gamma')==true
+
+            % If we wish to estimate the mie properties of liquid water
+            % for a distribution of droplets, then we can skip the
+            % pre-computed mie tables and estimate the values using the
+            % average_mie_over_size_distribution directly
+
+            % This function only deals with liquid water clouds
+            % define the index of refraction
+            index_of_refraction = 'water';
+            
+            % this loop applies to a vertical droplet profile. For now we
+            % will apply the same distribution variance to each level in
+            % the cloud.
+
+            % integrate over a size distribution to get an average
+            [~, Qavg, ~] = average_mie_over_size_distribution(re, linspace(distribution_var,distribution_var,length(re)),...
+                lambda,index_of_refraction, distribution_str);
+
+        elseif strcmp(distribution_str,'mono')==true
+            yq = interp_mie_computed_tables([repmat(lambda,numel(re),1), re], 'mono', justQ);
+
+        else
+
+            error([newline,'Invaled distribution type',newline])
+
+        end
 
     elseif strcmp(parameterization_str, '2limit')==true
 
@@ -335,7 +416,11 @@ elseif (size(re,1)==1 || size(re,2)==1) && strcmp(homogeneous_str, 'non-homogene
     end
 
 
-elseif (size(re,1)==1 || size(re,2)==1) && strcmp(homogeneous_str, 'homogeneous')==true
+    % if the the radius is a vector and the homogenous string is defined as
+    % vertically homogeneous, then the code assumes each value in the vector is
+    % a single cloud, and the each value defines the homogenous droplet size
+    % for that cloud.
+elseif (size(re,1)==1 || size(re,2)==1) && strcmp(vert_homogeneous_str, 'vert-homogeneous')==true
 
     num_files_2write = length(re);
 
@@ -352,12 +437,46 @@ elseif (size(re,1)==1 || size(re,2)==1) && strcmp(homogeneous_str, 'homogeneous'
     justQ = true;                       % Load the precomputed mie table of only Q_ext values
 
     if strcmp(parameterization_str,'mie')==true
-        yq = interp_mie_computed_tables([repmat(lambda,numel(re),1), re], distribution_str, justQ);
+
+
+        % **** ONLY INTERPOLATING HOMOGENOUS MIE COMPUTATIONS ****
+        % ********************************************************
+        % IF GAMMA DISTRIBUTION DESIRED, CODE WILL MANUALLY
+        % INTEGRATE OVER THE SIZE DISTRIBUTION DEFINED
+
+        if strcmp(distribution_str,'gamma')==true
+
+            % If we wish to estimate the mie properties of liquid water
+            % for a distribution of droplets, then we can skip the
+            % pre-computed mie tables and estimate the values using the
+            % average_mie_over_size_distribution directly
+
+            % This function only deals with liquid water clouds
+            % define the index of refraction
+            index_of_refraction = 'water';
+
+            % integrate over a size distribution to get an average
+            [~, Qavg, ~] = average_mie_over_size_distribution(re, distribution_var, lambda,...
+                index_of_refraction, distribution_str);
+
+        elseif strcmp(distribution_str,'mono')==true
+            yq = interp_mie_computed_tables([repmat(lambda,numel(re),1), re], 'mono', justQ);
+
+        else
+
+            error([newline,'Invaled distribution type',newline])
+
+        end
+
 
     elseif strcmp(parameterization_str, '2limit')==true
+
         yq = 2*ones(length(re),5);
 
     end
+
+
+
 
 
 else
@@ -366,14 +485,19 @@ else
 
 end
 
+
+
 % grab the q extinction values
 
-if justQ==false
-    Qext = reshape(yq(:,5),[],num_files_2write);         % Extinction efficiency
-else
-    Qext = reshape(yq(:,3),[],num_files_2write);         % conver this back into a matrix corresponging to re
+if strcmp(distribution_str,'gamma')==true
+    Qext = Qavg;         % Extinction efficiency
+
+elseif strcmp(distribution_str,'mono')==true
+    Qext = reshape(yq(:,3),[],num_files_2write);         % convert this back into a matrix corresponging to re
 
 end
+
+
 
 
 % now we will step through each wc file that needs to be created
@@ -400,11 +524,11 @@ fileName = cell(1,num_files_2write);
 
 
 % How many layers to model in the cloud?
-if size(re,1)>1 && size(re,2)>1 && strcmp(homogeneous_str, 'non-homogeneous')==true
+if size(re,1)>1 && size(re,2)>1 && strcmp(vert_homogeneous_str, 'vert-non-homogeneous')==true
     nLayers = size(re,1)+1;             % Number of altitude levels we need to define a cloud
-elseif (size(re,1)==1 || size(re,2)==1) && strcmp(homogeneous_str, 'non-homogeneous')==true
+elseif (size(re,1)==1 || size(re,2)==1) && strcmp(vert_homogeneous_str, 'vert-non-homogeneous')==true
     nLayers = length(re)+1;             % Number of altitude levels we need to define a cloud
-elseif (size(re,1)==1 || size(re,2)==1) && strcmp(homogeneous_str, 'homogeneous')==true
+elseif (size(re,1)==1 || size(re,2)==1) && strcmp(vert_homogeneous_str, 'vert-homogeneous')==true
     nLayers = 1;
 
 end
@@ -447,10 +571,15 @@ for nn = 1:num_files_2write
         fileName{nn} = ['WC_rtop',num2str(round(re(end,nn))),'_rbot',num2str(round(re(1,nn))),'_T',num2str(round(tau_c(nn))),'_', distribution_str, '.DAT'];
 
     else
-        Nc = tau_c(nn)./(pi*(H(nn)*1e3)*Qext(nn).*(re(nn)*1e-6).^2);                            % m^(-3) - number concentration
+
+        %Nc = tau_c(nn)./(pi*(H(nn)*1e3)*Qext(nn).*(re(nn)*1e-6).^2);                 % m^(-3) - number concentration
 
         % Compute Liquid Water Content
-        lwc = 4/3 * pi * rho_liquid_water * (re(nn)*1e-6).^3 .* Nc;                    % g/m^3 - grams of water per meter cubed of air
+        %lwc = 4/3 * pi * rho_liquid_water * (re(nn)*1e-6).^3 .* Nc;                  % g/m^3 - grams of water per meter cubed of air
+
+        % Compute Liquid Water Content
+        lwc = 4/3 * (re(nn)*1e-6) * rho_liquid_water * tau_c(nn)./...
+            (Qext(nn) * (H(nn)*1e3));                                                % g/m^3 - grams of water per meter cubed of air
 
         % create the water cloud file name
         fileName{nn} = ['WC_r',num2str(round(re(nn))),'_T',num2str(round(tau_c(nn))),'_', distribution_str, '.DAT'];
@@ -470,7 +599,7 @@ for nn = 1:num_files_2write
     % both the effective radius and the LWC need zeros on either boundary,
     % unless if the cloud is at the surface
 
-    if (size(re,1)==1 || size(re,2)==1) && strcmp(homogeneous_str, 'non-homogeneous')==true
+    if (size(re,1)==1 || size(re,2)==1) && strcmp(vert_homogeneous_str, 'vert-non-homogeneous')==true
 
         if z_topBottom(2)==0
             % If true, then the cloud starts at the surface and we only append
@@ -488,7 +617,7 @@ for nn = 1:num_files_2write
 
         end
 
-    elseif (size(re,1)==1 || size(re,2)==1) && strcmp(homogeneous_str, 'homogeneous')==true
+    elseif (size(re,1)==1 || size(re,2)==1) && strcmp(vert_homogeneous_str, 'vert-homogeneous')==true
 
         if z_topBottom(2)==0
             % If true, then the cloud starts at the surface and we only append

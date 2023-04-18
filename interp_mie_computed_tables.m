@@ -4,17 +4,18 @@
 % water droplets of varrying radii.
 
 % INPUTS:
-%   (1) distribution - choose between two lookup tables:
-%       (a) 'gamma' - one using a gamma distribution of droplets with an alpha
-%       factor of 7
-%       (b) 'mono' - one using a single particle of precisely the diameter in
-%       question
-%   (2) xq - querry points. If one wants to know the mie properties for a
+%   (1) xq - querry points. If one wants to know the mie properties for a
 %   droplet of radius r at wavelength w, xq is a vector that defines the
 %   locations r and w for interpolation. xq = [w,r] so please provide the
 %   wavelength first and then the radius. The wavelength should be in
 %   nanometers and the radius should be in microns. Sorry! 
-
+%
+%   (2) distribution - choose between two lookup tables:
+%       (a) 'gamma' - one using a gamma distribution of droplets with an alpha
+%       factor of 7
+%       (b) 'mono' - one using a single particle of precisely the diameter in
+%       question
+%
 %   (3) justQ_flag - tells the code you only need Qext - The entire
 %   Mie_Properties file is 29 MB, which takes a while to load! To write 10
 %   wc files, reading in the Mie_Properties file 10 times, it takes 8

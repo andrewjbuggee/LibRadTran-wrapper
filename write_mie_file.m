@@ -234,7 +234,7 @@ for ff = 1:numFiles
         % The step value has to be written with many significant digits to
         % ensure rounding doesn't prevent the full vector from being computed.
         if re_start~=re_end && re_step~=0
-            fprintf(fileID,'%5s %3.6f %3.6f %3.12f          %s \n', 'r_eff', re_start, re_end, re_step, comments{3});
+            fprintf(fileID,'%5s %3.6f %3.6f %3.15f          %s \n', 'r_eff', re_start, re_end, re_step, comments{3});
 
         elseif re_start==re_end && re_step==0
 
