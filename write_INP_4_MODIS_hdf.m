@@ -210,15 +210,10 @@ for pp = 1:length(pixel_row)
     for bb = 1: length(bands2run)
         
         modis_band_num = inputs.bands2run(bb);
-        
+        modis_band = modisBands(modis_band_num);        % nm - grab the wavelenghts
+
         % create the new expression for the wavelength band of interest
-        if modis_band_num<=2
-            str = ['wavelength ',num2str(modis.EV.m250.bands.lowerBound(modis_band_num)),'.0 ',...
-                num2str(modis.EV.m250.bands.upperBound(modis_band_num)),'.0'];
-        elseif modis_band_num>2
-            str = ['wavelength ',num2str(modis.EV.m500.bands.lowerBound(modis_band_num-2)),'.0 ',...
-                num2str(modis.EV.m500.bands.upperBound(modis_band_num-2)),'.0'];
-        end
+        str = ['wavelength ',num2str(modis_band(2)),'.0 ',num2str(modis_band(3)),'.0'];
         
         if length(str) < length(oldExpr{2})
             
@@ -257,17 +252,21 @@ for pp = 1:length(pixel_row)
                 
                 % ------ FUTURE WORK -------
                 % Retireve the cloud top pressure and infer a more accurate
-                % cloud top height
-                z_topBottom = [1.5, 1];                     % km - cloud top and bottom altitude above ground
-                H = 0.5;                                    % km - cloud geometric thickness
-                lambda = modisBandsCenter(modis_band_num);  % nm - wavvelength
-                dist_str = 'mono';                          % monodispersed distribution - until we can fix the gamma distribution issue
+                % cloud top height and thickness is set to be the same values 
+                % described in: "Overview of the MODIS Collection 6 Cloud Optical 
+                % Property (MOD06) Retrieval Look-up Tables" Amarasinghe
+                % et. al 2017
+                z_topBottom = [9, 8];                     % km - cloud top and bottom altitude above ground
+                lambda = modis_band(1);                     % nm - center wavelength
                 
-                wc_filename = write_wc_file(re(rr), tau_c(tt), z_topBottom, H, lambda, dist_str);
-                
+                wc_filename = write_wc_file(re(rr), tau_c(tt), z_topBottom, lambda,inputs.clouds.distribution_type,...
+                    inputs.clouds.distribution_variance, inputs.clouds.vert_homogeneity,...
+                    inputs.clouds.wc_parameterization);
+                % open up the cell structure
+                wc_filename = wc_filename{1};
                 % lets start with inserting the proper water cloud file
                 
-                if strcmp(dist_str,'mono')==true
+                if strcmp(inputs.clouds.distribution_type,'mono')==true
                     
                     if re(rr)<10 && tau_c(tt)<10
                         % newExpr{1} = ['wc_file 1D ../data/wc/WC_r0',num2str(re(rr)),'_T0',num2str(tau_c(tt)),'.DAT'];
@@ -283,7 +282,7 @@ for pp = 1:length(pixel_row)
                         newExpr{1} = ['wc_file 1D ../data/wc/',wc_filename(1:4),'00',wc_filename(5:end)];
                     end
                     
-                elseif strcmp(dist_str, 'gamma')==true
+                elseif strcmp(inputs.clouds.distribution_type, 'gamma')==true
                     
                     if re(rr)<10 && tau_c(tt)<10
                         % newExpr{1} = ['wc_file 1D ../data/wc/WC_r0',num2str(re(rr)),'_T0',num2str(tau_c(tt)),'.DAT'];

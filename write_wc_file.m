@@ -99,7 +99,7 @@
 
 %%
 
-function [fileName] = write_wc_file(re,tau_c,z_topBottom, lambda, distribution_str,distribution_var,...
+function [fileName] = write_wc_file(re,tau_c,z_topBottom, lambda, distribution_str, distribution_var,...
     vert_homogeneous_str, parameterization_str)
 
 % ------------------------------------------------------------
@@ -111,8 +111,8 @@ function [fileName] = write_wc_file(re,tau_c,z_topBottom, lambda, distribution_s
 
 
 if nargin~=8
-    error([newline,'Not enough inputs. Need 8: droplet effective radius, optical depth, altitude',...
-        [' wavelength, droplet distribution type, variance of the droplet distribution,...' ...
+    error([newline,'Not enough inputs. Need 8: droplet effective radius, optical depth, altitude,',...
+        [' wavelength, droplet distribution type, variance of the droplet distribution,' ...
         ' homogeneity type and the parameterization used to compute LWC.'], newline])
 end
 
@@ -502,7 +502,7 @@ end
 
 % now we will step through each wc file that needs to be created
 
-% if tau_c is a single value and num_files_2write is greater than 1, we will
+% if H is a single value and num_files_2write is greater than 1, we will
 % repeat it to create a vector with the same length
 if length(H)==1 && num_files_2write>1
     H = repmat(H,num_files_2write,1);           % km - geometric thickness
