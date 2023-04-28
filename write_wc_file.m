@@ -49,9 +49,8 @@
 %   (6) distribution_str - a string telling the code which droplet size
 %   distribution to use  - One can chose from two options:
 %       (a) 'mono' - monodispersed distribution
-%       (b) 'gamma' - gamma droplet distribution. By default this will use
-%       a gamma distribution with an alpha value of 7, which is typical for
-%       liquid water clouds. *** IMPORTANT *** For now, this function will NOT
+%       (b) 'gamma' - gamma droplet distribution. 
+%       *** IMPORTANT *** For now, this function will NOT
 %       use precomputed mie calculations using a gamma droplet
 %       distribution. The values returned by LibRadTran appear erroneously
 %       high. Instead, if one wished to use a gamma droplet distribution,

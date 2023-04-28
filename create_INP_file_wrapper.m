@@ -4,25 +4,47 @@
 % By Andrew John Buggee
 %%
 
+% -------------------------------------------------------
+% ----------------- FOR MACBOOK -------------------------
+% -------------------------------------------------------
+
 % Define the folder for where this INP file should be saved
-folderName = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval/',...
-             'LibRadTran/libRadtran-2.0.4/testing_UVSPEC/'];
+% folderName = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval/',...
+%              'LibRadTran/libRadtran-2.0.4/testing_UVSPEC/'];
+
+
+% -------------------------------------------------------
+% --------------------- FOR MAC -------------------------
+% -------------------------------------------------------
+
+% Define the folder for where this INP file should be saved
+folderName = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/testing_UVSPEC/';
 
 
 % Define override of total precipitable water. This will force the total
 % column of water vapor to be whatever value you define.
 % If you don't wish to change the default, define the variable with nan
-total_h2O_column = 17;        % mm of precipitable water
+total_h2O_column = 4.03;        % mm of precipitable water
 
 
-% define the wavelength
-wavelength = 2130;              % nm - monochromatic wavelength calcualtion
+% define the wavelength range. If monochromatic, enter the same number
+% twice
+wavelength = [620 670];              % nm - monochromatic wavelength calcualtion
 
 % define the solar zenith angle
-sza = 45;                       % degree
+sza = 35;                       % degree
+
+% define teh solar azimuth angle
+phi0 = 109;
+
+% define the viewing azimuth angle
+vaz = 95;
 
 % define the viewing zenith angle
-vza = 0;                        % degree
+vza = acosd(0.515);                        % degree
+
+% define the surface albedo
+albedo = 0.05;
 
 
 
@@ -35,22 +57,27 @@ yesCloud = true;
 
 
 % define the total cloud optical depth
-tau_c = 20.314;
+tau_c = 16.68;
 % define the droplet size
-re = 12.12;                        % microns
+re = 11.88;                        % microns
 % define the geometric location of the cloud top and cloud bottom
-z_topBottom = [1.5,1];          % km above surface
+z_topBottom = [9,8];          % km above surface
 % define the type of droplet distribution
-distribution_str = 'mono';
+distribution_str = 'gamma';
+% define the distribution varaince
+distribution_var = 7;
 % define whether this is a vertically homogenous cloud or not
-homogeneous_str = 'homogeneous';
+vert_homogeneous_str = 'vert-homogeneous';
 % define how liquid water content will be computed
 parameterization_str = 'mie';
 
+% define the wavelength used for the optical depth
+lambda_forTau = 650;            % nm
 
 
-wc_filename = write_wc_file(re,tau_c,z_topBottom, wavelength, distribution_str,...
-    homogeneous_str, parameterization_str);
+
+wc_filename = write_wc_file(re,tau_c,z_topBottom, lambda_forTau, distribution_str,...
+    distribution_var, vert_homogeneous_str, parameterization_str);
 
 % Define the percentage of cloud cover
 percent_cloud_cover = 1;
@@ -63,15 +90,17 @@ wc_parameterization = 'mie interpolate';
 
 
 % define the atmospheric data file
-atm_file = 'afglsw.dat';
+atm_file = 'afglus.dat';
 
 
 % define the name of the input file
 if yesCloud==true
-        inputName = [num2str(wavelength),'nm_withCloudLayer_',num2str(sza),'sza_',num2str(vza),...
+        inputName = [num2str((wavelength(2)-wavelength(1))/2 + wavelength(1)),...
+                    'nm_withCloudLayer_',num2str(sza),'sza_',num2str(round(vza)),...
                 'vza_',atm_file(1:end-4),'.INP'];
 else
-        inputName = [num2str(wavelength),'nm_',num2str(sza),'sza_',num2str(vza),...
+        inputName = [num2str((wavelength(2)-wavelength(1))/2 + wavelength(1)),...
+            'nm_',num2str(sza),'sza_',num2str(round(vza)),...
                 'vza_',atm_file(1:end-4),'.INP'];
 end
 
@@ -127,7 +156,7 @@ end
 % Define the surface albedo
 % ------------------------------------------------
 formatSpec = '%s %s %5s %s \n\n';
-fprintf(fileID, formatSpec,'albedo','0', ' ', '# Surface albedo of the ocean');
+fprintf(fileID, formatSpec,'albedo', albedo, ' ', '# Surface albedo of the ocean');
 
 
 if yesCloud==true
@@ -157,7 +186,7 @@ end
 % be solve
 % -------------------------------------------------------------------------
 formatSpec = '%s %f %f %5s %s \n\n';
-fprintf(fileID, formatSpec,'wavelength', wavelength, wavelength, ' ', '# Wavelength range');
+fprintf(fileID, formatSpec,'wavelength', wavelength(1), wavelength(2), ' ', '# Wavelength range');
 
 
 % Define the sensor altitude
@@ -173,7 +202,7 @@ fprintf(fileID, formatSpec,'sza', sza, ' ', '# Solar zenith angle');
 % Define the solar azimuth angle
 % ------------------------------------------------
 formatSpec = '%s %f %5s %s \n';
-fprintf(fileID, formatSpec,'phi0', 0.0, ' ', '# Solar azimuth angle');
+fprintf(fileID, formatSpec,'phi0', phi0, ' ', '# Solar azimuth angle');
 
 % Define the cosine of the zenith viewing angle
 % ------------------------------------------------
@@ -183,7 +212,7 @@ fprintf(fileID, formatSpec,'umu', cosd(vza), ' ', '# Cosine of the zenith viewin
 % Define the azimuth viewing angle
 % ------------------------------------------------
 formatSpec = '%s %f %5s %s \n\n';
-fprintf(fileID, formatSpec,'phi', 0.0, ' ', '# Azimuthal viewing angle');
+fprintf(fileID, formatSpec,'phi', vaz, ' ', '# Azimuthal viewing angle');
 
 
 % Set the error message to quiet of verbose
