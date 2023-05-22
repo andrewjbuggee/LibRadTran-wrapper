@@ -323,7 +323,7 @@ end
 
 
 
-if strcmp(rte_solver,'disort')==true
+if strcmp(rte_solver,'disort')==true || strcmp(rte_solver, 'fdisort2')==true
     
     irrad_headers_units = cell(2,8);
     irrad_headers_units{1,1} = 'wavelength';

@@ -87,6 +87,11 @@
 %       paradox limit and sets the extinction efficiency at a constant
 %       value of 2
 
+%   (9) index - this is the unique identifier that ensures files are not
+%   written over one another. If one file is created, the index will be 1.
+%   If many fiels are written in a for loop, each file will be tagged with
+%   the number in the loop.
+
 % OUTPUTS:
 %   (1) .Dat file saved in the libRadTran folder:
 %   /.../libRadtran-2.0.4/data/wc
@@ -99,7 +104,7 @@
 %%
 
 function [fileName] = write_wc_file(re,tau_c,z_topBottom, lambda, distribution_str, distribution_var,...
-    vert_homogeneous_str, parameterization_str)
+    vert_homogeneous_str, parameterization_str, index)
 
 % ------------------------------------------------------------
 % ---------------------- CHECK INPUTS ------------------------
@@ -109,10 +114,10 @@ function [fileName] = write_wc_file(re,tau_c,z_topBottom, lambda, distribution_s
 % depth, and the altitude vector associated with this cloud
 
 
-if nargin~=8
+if nargin~=9
     error([newline,'Not enough inputs. Need 8: droplet effective radius, optical depth, altitude,',...
         [' wavelength, droplet distribution type, variance of the droplet distribution,' ...
-        ' homogeneity type and the parameterization used to compute LWC.'], newline])
+        ' homogeneity type, the parameterization used to compute LWC, and the unique file index.'], newline])
 end
 
 % Check to make sure re is the same length as the altitude vector
@@ -220,7 +225,8 @@ computer_name = whatComputer;
 if strcmp(computer_name,'anbu8374')==true
 
     mie_calc_folder_path = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/Mie_Calculations/';
-    water_cloud_folder_path = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/data/wc/';
+    %water_cloud_folder_path = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/data/wc/';
+    water_cloud_folder_path = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/data/wc/wc2/';
 
 elseif strcmp(computer_name,'andrewbuggee')==true
 
@@ -567,7 +573,8 @@ for nn = 1:num_files_2write
         lwc = 4/3 * pi * rho_liquid_water * (re(:,nn)*1e-6).^3 .* Nc;                    % g/m^3 - grams of water per meter cubed of air
 
         % create the water cloud file name
-        fileName{nn} = ['WC_rtop',num2str(round(re(end,nn))),'_rbot',num2str(round(re(1,nn))),'_T',num2str(round(tau_c(nn))),'_', distribution_str, '.DAT'];
+        fileName{nn} = ['WC_rtop',num2str(round(re(end,nn))),'_rbot',num2str(round(re(1,nn))),'_T',num2str(round(tau_c(nn))),...
+            '_', distribution_str,'_nn',num2str(index), '.DAT'];
 
     else
 
@@ -581,7 +588,8 @@ for nn = 1:num_files_2write
             (Qext(nn) * (H(nn)*1e3));                                                % g/m^3 - grams of water per meter cubed of air
 
         % create the water cloud file name
-        fileName{nn} = ['WC_r',num2str(round(re(nn))),'_T',num2str(round(tau_c(nn))),'_', distribution_str, '.DAT'];
+        fileName{nn} = ['WC_r',num2str(round(re(nn))),'_T',num2str(round(tau_c(nn))),'_', distribution_str,...
+            '_nn',num2str(index), '.DAT'];
 
     end
 

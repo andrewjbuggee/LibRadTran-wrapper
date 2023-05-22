@@ -8,7 +8,7 @@
 
 %%
 
-function [R,Rl] = runReflectanceFunction(inputs,names)
+function [R,Rl] = runReflectanceFunction(inputs,names, spectral_response)
 
 % what computer are we using?
 
@@ -44,6 +44,7 @@ length_tau = size(outputFileNames,3);
 
 R = zeros(size(inputFileNames)); % each value here is integrated over the band provided
 Rl = cell(size(inputFileNames)); % each value here is the spectral reflectance over the entire band
+
 
 
 % first step through pixel space
@@ -91,9 +92,12 @@ for pp = 1:size(inputFileNames,1)
             for tt = 1:length_tau
 
                 [pp,rr,tt,bb]
-
+                
+                % Read the UV spec calculation into an array
                 [ds{tt},~,~] = readUVSPEC(inp_folder,outputFileNames{pp,rr,tt,bb},inputSettings(tt+1,:)); % headers don't change per iteration
-                [R(pp,rr,tt,bb),Rl{pp,rr,tt,bb}] = reflectanceFunction(inputSettings(tt+1,:),ds{tt});
+                
+                % Compute the reflectance function
+                [R(pp,rr,tt,bb),Rl{pp,rr,tt,bb}] = reflectanceFunction(inputSettings(tt+1,:),ds{tt}, spectral_response{bb}(:,2));
 
             end
 

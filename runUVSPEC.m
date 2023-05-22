@@ -88,7 +88,7 @@ if numFiles2Run==1
     match8 = regexp(textFile,expr8,'match'); % find the wavelength range in order to trim the source file
     
     index1_space1 = regexp(match1{1},'\s[a-z]+'); % find the spaces
-    index1_space2 = regexp(match1{1},'[a-z]\s+'); % the second index should be the last letter in the solver type
+    index1_space2 = regexp(match1{1},'[a-zA-Z_0-9]\s+'); % the second index should be the last letter in the solver type
     
     index2_space1 = regexp(match2{1},'\s[0123456789]+'); % find a space that is followed by a number
     index2_space2 = regexp(match2{1},'[0123456789]\s+'); % find a space that comes after a number
@@ -169,36 +169,35 @@ if numFiles2Run==1
     end
     wavelength = str2double(wavelength_str);
     
-    % determine the solar or thermal source file
+    % ---------------------------------------------------------
+    % ------ determine the solar or thermal source file -------
     % we want to store the source flux as a vector
     % all solar source files will be located in the folder: /Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/LibRadTran/libRadtran-2.0.4/data/solar_flux
     % all thermal source files will be located in the foler:
     if strcmp('solar',match7{1}(index7_space1(1)+1:index7_space2(2)))
         
         fileSolar = match7{1}(index7_file1(1)+5:index7_file2(1)+3);
-        sourceFile = fileread([folderSolar,fileSolar]);
-        
-        exprSource = '[^\n]*[\d][\d] [^\n]*'; % look for the new lines with atleast two digits in a row
-        matchSource = regexp(sourceFile,exprSource,'match'); % find rte_solver typ
-        
-        source = zeros(length(matchSource),2);
-        for ii = 1:length(matchSource)
-            source(ii,:) = str2num(matchSource{ii});
-        end
+
+        % open the file for reading
+        file_id = fopen([folderSolar,fileSolar], 'r');   % 'r' tells the function to open the file for reading
+
+        format_spec = '%f %f';                                  % two floating point numbers
+        source_data = textscan(file_id, format_spec, 'Delimiter',' ',...
+            'MultipleDelimsAsOne',1, 'CommentStyle','#');
         
         % now we clip source to match the length of our wavelength vector
         % if we run a monochromatic calculation, we do the following first.
         % Then, for multispectral calculations
         if length(wavelength)==1
-            indexSource = source(:,1)==round(wavelength); % can only have integer values for wavelength
-            source = source(repmat(indexSource,1,2));
-            source = reshape(source,size(source,1)/2,[]);
+            indexSource = source_data{1}==round(wavelength); % can only have integer values for wavelength
+            source(:,1) = source_data{1}(indexSource);
+            source(:,2) = source_data{2}(indexSource);
             
         elseif length(wavelength)>1
             
-            indexSource = source(:,1)>=wavelength(1) & source(:,1)<=wavelength(2);
-            source = source(repmat(indexSource,1,2));
-            source = reshape(source,size(source,1)/2,[]);
+            indexSource = source_data{1}>=wavelength(1) & source_data{1}<=wavelength(2);
+            source(:,1) = source_data{1}(indexSource);
+            source(:,2) = source_data{2}(indexSource);
         end
     end
     
