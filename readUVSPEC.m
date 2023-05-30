@@ -18,7 +18,7 @@
 % --- By Andrew J. Buggee ---
 %% --- Read in Files ---
 
-function [dataStruct,irrad_headers_units,rad_headers_units] = readUVSPEC(path,fileName,inputSettings)
+function [dataStruct,irrad_headers_units,rad_headers_units] = readUVSPEC(path,fileName,inputSettings, compute_reflectivity)
 
 % How many files do we need to read?
 
@@ -362,74 +362,158 @@ if strcmp(rte_solver,'disort')==true || strcmp(rte_solver, 'fdisort2')==true
     
     
     
-    if numFiles2Read==1
-        if numUmu==0
-            % if we have to zenith view angles, then only irradiance is
-            % calculated
-            
-            rad_headers_units = cell(2,2);
-            rad_headers_units{1,1} = 'azAvgRad';
-            rad_headers_units{1,2} = 'rad-umu-phi';
-            rad_headers_units{2,1} = 'mW/(m^{2} nm sr)';
-            rad_headers_units{2,2} = 'mW/(m^{2} nm sr)';
-            
-            dataStruct = struct(irrad_headers_units{1,2},irradianceData(:,2),...
-                irrad_headers_units{1,3},irradianceData(:,3),irrad_headers_units{1,4},irradianceData(:,4),...
-                irrad_headers_units{1,5},irradianceData(:,5),irrad_headers_units{1,6},irradianceData(:,6),...
-                irrad_headers_units{1,7},irradianceData(:,7),irrad_headers_units{1,8},irradianceData(:,8));
-            
-            dataStruct.wavelength = wavelength;
-            
-        elseif numUmu>0
-            % if we do have zenith viewing angles defined, then uvspec
-            % calculates both irradiance and radiance
-            
-            rad_headers_units = cell(2,2);
-            rad_headers_units{1,1} = 'azAvgRad';
-            rad_headers_units{1,2} = 'rad-umu-phi';
-            rad_headers_units{2,1} = 'mW/(m^{2} nm sr)';
-            rad_headers_units{2,2} = 'mW/(m^{2} nm sr)';
-            
-            dataStruct = struct('irradiance',struct(irrad_headers_units{1,2},irradianceData(:,2),...
-                irrad_headers_units{1,3},irradianceData(:,3),irrad_headers_units{1,4},irradianceData(:,4),...
-                irrad_headers_units{1,5},irradianceData(:,5),irrad_headers_units{1,6},irradianceData(:,6),...
-                irrad_headers_units{1,7},irradianceData(:,7),irrad_headers_units{1,8},irradianceData(:,8)));
-            
-            dataStruct.wavelength = wavelength;
-            
-            % now we need the index for constant geometry but changing
-            % wavelength
-            
-            
-            for jj = 1:numPhi
-                for kk = 1:numUmu
-                    ind = sub2ind([numUmu,numPhi],kk,jj);
-                    dataStruct.radiance(ind).umu_phi = [num2str(umuVec(kk)),',',num2str(phiVec(jj))];
-                    
-                    indexCol = 2 + jj; % The first two colums contain stuff we currently don't care about like the umu value and the azimuthally averaged radiance
-                    indexRow = kk:numUmu:size(radianceData,1);
-                    
-                    dataStruct.radiance(ind).rad_umu_phi = radianceData(indexRow,indexCol); % this gives us vectors of constant geometry but changing wavelength
-                    
-                    
+    if compute_reflectivity==false
+        % Read in the default outputs
+        if numFiles2Read==1
+            if numUmu==0
+
+                % if we have to zenith view angles, then only irradiance is
+                % calculated
+
+                rad_headers_units = cell(2,2);
+                rad_headers_units{1,1} = 'azAvgRad';
+                rad_headers_units{1,2} = 'rad-umu-phi';
+                rad_headers_units{2,1} = 'mW/(m^{2} nm sr)';
+                rad_headers_units{2,2} = 'mW/(m^{2} nm sr)';
+
+                dataStruct = struct(irrad_headers_units{1,2},irradianceData(:,2),...
+                    irrad_headers_units{1,3},irradianceData(:,3),irrad_headers_units{1,4},irradianceData(:,4),...
+                    irrad_headers_units{1,5},irradianceData(:,5),irrad_headers_units{1,6},irradianceData(:,6),...
+                    irrad_headers_units{1,7},irradianceData(:,7),irrad_headers_units{1,8},irradianceData(:,8));
+
+                dataStruct.wavelength = wavelength;
+
+            elseif numUmu>0
+                % if we do have zenith viewing angles defined, then uvspec
+                % calculates both irradiance and radiance
+
+                rad_headers_units = cell(2,2);
+                rad_headers_units{1,1} = 'azAvgRad';
+                rad_headers_units{1,2} = 'rad-umu-phi';
+                rad_headers_units{2,1} = 'mW/(m^{2} nm sr)';
+                rad_headers_units{2,2} = 'mW/(m^{2} nm sr)';
+
+                dataStruct = struct('irradiance',struct(irrad_headers_units{1,2},irradianceData(:,2),...
+                    irrad_headers_units{1,3},irradianceData(:,3),irrad_headers_units{1,4},irradianceData(:,4),...
+                    irrad_headers_units{1,5},irradianceData(:,5),irrad_headers_units{1,6},irradianceData(:,6),...
+                    irrad_headers_units{1,7},irradianceData(:,7),irrad_headers_units{1,8},irradianceData(:,8)));
+
+                dataStruct.wavelength = wavelength;
+
+                % now we need the index for constant geometry but changing
+                % wavelength
+
+
+                for jj = 1:numPhi
+                    for kk = 1:numUmu
+                        ind = sub2ind([numUmu,numPhi],kk,jj);
+                        dataStruct.radiance(ind).umu_phi = [num2str(umuVec(kk)),',',num2str(phiVec(jj))];
+
+                        indexCol = 2 + jj; % The first two colums contain stuff we currently don't care about like the umu value and the azimuthally averaged radiance
+                        indexRow = kk:numUmu:size(radianceData,1);
+
+                        dataStruct.radiance(ind).value = radianceData(indexRow,indexCol); % this gives us vectors of constant geometry but changing wavelength
+
+
+                    end
                 end
+
+
             end
-            
-            
+
+
+
+        elseif numFiles2Read>1
+            dataStruct = struct(irrad_headers_units{1,1},reshape(data(:,1,:),[],numFiles2Read),...
+                irrad_headers_units{1,2},reshape(data(:,2,:),[],numFiles2Read),irrad_headers_units{1,3},...
+                reshape(data(:,3,:),[],numFiles2Read),irrad_headers_units{1,4},...
+                reshape(data(:,4,:),[],numFiles2Read),irrad_headers_units{1,5},...
+                reshape(data(:,5,:),[],numFiles2Read),irrad_headers_units{1,6},...
+                reshape(data(:,6,:),[],numFiles2Read),irrad_headers_units{1,7},...
+                reshape(data(:,7,:),[],numFiles2Read),irrad_headers_units{1,8},...
+                reshape(data(:,8,:),[],numFiles2Read));
         end
-        
-        
-        
-    elseif numFiles2Read>1
-        dataStruct = struct(irrad_headers_units{1,1},reshape(data(:,1,:),[],numFiles2Read),...
-            irrad_headers_units{1,2},reshape(data(:,2,:),[],numFiles2Read),irrad_headers_units{1,3},...
-            reshape(data(:,3,:),[],numFiles2Read),irrad_headers_units{1,4},...
-            reshape(data(:,4,:),[],numFiles2Read),irrad_headers_units{1,5},...
-            reshape(data(:,5,:),[],numFiles2Read),irrad_headers_units{1,6},...
-            reshape(data(:,6,:),[],numFiles2Read),irrad_headers_units{1,7},...
-            reshape(data(:,7,:),[],numFiles2Read),irrad_headers_units{1,8},...
-            reshape(data(:,8,:),[],numFiles2Read));
+
+    else
+        % Read in reflectivity
+
+        if numFiles2Read==1
+            if numUmu==0
+
+                % if we have to zenith view angles, then only irradiance is
+                % calculated
+
+                rad_headers_units = cell(2,2);
+                rad_headers_units{1,1} = 'azAvgRefl';
+                rad_headers_units{1,2} = 'refl-umu-phi';
+                rad_headers_units{2,1} = 'mW/(m^{2} nm sr)';
+                rad_headers_units{2,2} = 'mW/(m^{2} nm sr)';
+
+                dataStruct = struct(irrad_headers_units{1,2},irradianceData(:,2),...
+                    irrad_headers_units{1,3},irradianceData(:,3),irrad_headers_units{1,4},irradianceData(:,4),...
+                    irrad_headers_units{1,5},irradianceData(:,5),irrad_headers_units{1,6},irradianceData(:,6),...
+                    irrad_headers_units{1,7},irradianceData(:,7),irrad_headers_units{1,8},irradianceData(:,8));
+
+                dataStruct.wavelength = wavelength;
+
+            elseif numUmu>0
+                % if we do have zenith viewing angles defined, then uvspec
+                % calculates both irradiance and radiance
+
+                rad_headers_units = cell(2,2);
+                rad_headers_units{1,1} = 'azAvgRefl';
+                rad_headers_units{1,2} = 'refl-umu-phi';
+                rad_headers_units{2,1} = 'mW/(m^{2} nm sr)';
+                rad_headers_units{2,2} = 'mW/(m^{2} nm sr)';
+
+%                 dataStruct = struct('irradiance',struct(irrad_headers_units{1,2},irradianceData(:,2),...
+%                     irrad_headers_units{1,3},irradianceData(:,3),irrad_headers_units{1,4},irradianceData(:,4),...
+%                     irrad_headers_units{1,5},irradianceData(:,5),irrad_headers_units{1,6},irradianceData(:,6),...
+%                     irrad_headers_units{1,7},irradianceData(:,7),irrad_headers_units{1,8},irradianceData(:,8)));
+
+                dataStruct.wavelength = irradianceData(1,1);    % nm
+
+                % now we need the index for constant geometry but changing
+                % wavelength
+
+
+                for jj = 1:numPhi
+                    for kk = 1:numUmu
+                        ind = sub2ind([numUmu,numPhi],kk,jj);
+                        dataStruct.reflectivity(ind).umu_phi = [num2str(umuVec(kk)),',',num2str(phiVec(jj))];
+
+                        indexCol = 2 + jj; % The first two colums contain stuff we currently don't care about like the umu value and the azimuthally averaged radiance
+                        indexRow = kk:numUmu:size(radianceData,1);
+
+
+                        dataStruct.reflectivity(ind).az_avg = radianceData(indexRow,indexCol-1); % Azimuthally averaged reflectivity
+                        dataStruct.reflectivity(ind).value = radianceData(indexRow,indexCol); % reflectivity - this gives us vectors of constant geometry but changing wavelength
+
+
+                    end
+                end
+
+
+            end
+
+
+
+        elseif numFiles2Read>1
+            dataStruct = struct(irrad_headers_units{1,1},reshape(data(:,1,:),[],numFiles2Read),...
+                irrad_headers_units{1,2},reshape(data(:,2,:),[],numFiles2Read),irrad_headers_units{1,3},...
+                reshape(data(:,3,:),[],numFiles2Read),irrad_headers_units{1,4},...
+                reshape(data(:,4,:),[],numFiles2Read),irrad_headers_units{1,5},...
+                reshape(data(:,5,:),[],numFiles2Read),irrad_headers_units{1,6},...
+                reshape(data(:,6,:),[],numFiles2Read),irrad_headers_units{1,7},...
+                reshape(data(:,7,:),[],numFiles2Read),irrad_headers_units{1,8},...
+                reshape(data(:,8,:),[],numFiles2Read));
+        end
+
+
     end
+
+
+
     
 elseif strcmp(rte_solver,'twostr')==true
     

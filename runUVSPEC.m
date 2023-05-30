@@ -105,14 +105,22 @@ if numFiles2Run==1
     index6_space1 = regexp(match6{1},'\s[0123456789]+'); % There is only 1 value for the solar zenith angle
     index6_space2 = regexp(match6{1},'[0123456789]\s+'); % find a space that comes after a number
     
-    index7_space1 = regexp(match7{1},'\s[a-z]'); % find the spaces
-    index7_space2 = regexp(match7{1},'[a-z]\s'); % Brackets treat the symbol literally. number of decimals tells us how many values there are in the vector
-    index7_file1 = regexp(match7{1},'flux[/][a-z]'); % find the locaition a letter follows two dots and a forward slash
-    index7_file2 = regexp(match7{1},'[.]dat');
-    
-    index8_space1 = regexp(match8{1},'\s[0123456789]+'); % There is only 1 value for the solar zenith angle
-    index8_space2 = regexp(match8{1},'[0123456789]\s+'); % find a space that comes after a number
-    
+    % don't let the lack of a source stop you!
+    if isempty(match7)==true
+
+    else
+        index7_space1 = regexp(match7{1},'\s[a-z]'); % find the spaces
+        index7_space2 = regexp(match7{1},'[a-z]\s'); % Brackets treat the symbol literally. number of decimals tells us how many values there are in the vector
+        index7_file1 = regexp(match7{1},'flux[/][a-z]'); % find the locaition a letter follows two dots and a forward slash
+        index7_file2 = regexp(match7{1},'[.]dat');
+    end
+
+    % don't let a lack of wavelengths stop you!
+    if isempty(match8)==false
+        index8_space1 = regexp(match8{1},'\s[0123456789]+'); % There is only 1 value for the solar zenith angle
+        index8_space2 = regexp(match8{1},'[0123456789]\s+'); % find a space that comes after a number
+    end
+
     
     % determine the rte_solver type
     rte_solver = match1{1}(index1_space1(1)+1:index1_space2(2));
@@ -162,45 +170,70 @@ if numFiles2Run==1
     end
     
     % find the wavelength range of the output file
-    wavelength_str= cell(1,length(index8_space1));
-    
-    for ii = 1:length(index8_space1)
-        wavelength_str{ii} = match8{1}(index8_space1(ii)+1:index8_space2(ii));
+    if isempty(match8)==false
+        wavelength_str= cell(1,length(index8_space1));
+
+        for ii = 1:length(index8_space1)
+            wavelength_str{ii} = match8{1}(index8_space1(ii)+1:index8_space2(ii));
+        end
+        wavelength = str2double(wavelength_str);
+
+    else
+        wavelength = [];
     end
-    wavelength = str2double(wavelength_str);
-    
+
     % ---------------------------------------------------------
     % ------ determine the solar or thermal source file -------
     % we want to store the source flux as a vector
     % all solar source files will be located in the folder: /Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/LibRadTran/libRadtran-2.0.4/data/solar_flux
     % all thermal source files will be located in the foler:
-    if strcmp('solar',match7{1}(index7_space1(1)+1:index7_space2(2)))
-        
-        fileSolar = match7{1}(index7_file1(1)+5:index7_file2(1)+3);
 
-        % open the file for reading
-        file_id = fopen([folderSolar,fileSolar], 'r');   % 'r' tells the function to open the file for reading
+    if isempty(match7)==false
+        if strcmp('solar',match7{1}(index7_space1(1)+1:index7_space2(2)))
 
-        format_spec = '%f %f';                                  % two floating point numbers
-        source_data = textscan(file_id, format_spec, 'Delimiter',' ',...
-            'MultipleDelimsAsOne',1, 'CommentStyle','#');
-        
-        % now we clip source to match the length of our wavelength vector
-        % if we run a monochromatic calculation, we do the following first.
-        % Then, for multispectral calculations
-        if length(wavelength)==1
-            indexSource = source_data{1}==round(wavelength); % can only have integer values for wavelength
-            source(:,1) = source_data{1}(indexSource);
-            source(:,2) = source_data{2}(indexSource);
-            
-        elseif length(wavelength)>1
-            
-            indexSource = source_data{1}>=wavelength(1) & source_data{1}<=wavelength(2);
-            source(:,1) = source_data{1}(indexSource);
-            source(:,2) = source_data{2}(indexSource);
+            if length(match7{1})<=54
+                % This happens when the input is simple 'source solar' with no
+                % specified file
+                fileSolar = 'internal';
+                source = [];
+
+            else
+                fileSolar = match7{1}(index7_file1(1)+5:index7_file2(1)+3);
+
+                % open the file for reading
+                file_id = fopen([folderSolar,fileSolar], 'r');   % 'r' tells the function to open the file for reading
+
+                format_spec = '%f %f';                                  % two floating point numbers
+                source_data = textscan(file_id, format_spec, 'Delimiter',' ',...
+                    'MultipleDelimsAsOne',1, 'CommentStyle','#');
+
+                % now we clip source to match the length of our wavelength vector
+                % if we run a monochromatic calculation, we do the following first.
+                % Then, for multispectral calculations
+                if length(wavelength)==1
+                    indexSource = source_data{1}==round(wavelength); % can only have integer values for wavelength
+                    source(:,1) = source_data{1}(indexSource);
+                    source(:,2) = source_data{2}(indexSource);
+
+                elseif length(wavelength)>1
+
+                    indexSource = source_data{1}>=wavelength(1) & source_data{1}<=wavelength(2);
+                    source(:,1) = source_data{1}(indexSource);
+                    source(:,2) = source_data{2}(indexSource);
+
+                elseif isempty(wavelength)==true
+                    source(:,1) = source_data{1};
+                    source(:,2) = source_data{2};
+                end
+            end
         end
+
+    else
+
+        source = [];
+
     end
-    
+
     % Pull all input settings into a cell array
     % first lets give them headers and labels:
     
