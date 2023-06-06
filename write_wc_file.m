@@ -13,7 +13,7 @@
 %   files, where the number of columns is equal to the number of wc files
 %   created. The number of rows is equal to the number of layers modeled.
 %   To create many water cloud files at once that model a homogenous cloud,
-%   simply set the column vectors of re to be identical values. 
+%   simply set the column vectors of re to be identical values.
 %   ***IMPORTANT*** the re values must start at the cloud bottom with the
 %   first value (or row). The last value (or row) is the droplet size at
 %   cloud top.
@@ -26,7 +26,8 @@
 %   having a certain droplet size and a certain optical thickness. Enter a
 %   single value for a single wc file, or a vector if you're creating
 %   multiple wc files. If re is a matrix, and tau_c is a single value, each
-%   wc file will have the entered tau_c
+%   wc file will have the entered tau_c. If each value in the re matrix
+%   needs a unique tau value
 
 %   (3) z_topBottom - altitude above sea level (kilometers) - this is a
 %   vector with two values: [z_cloudTop, z_cloudBottom]. LibRadTran
@@ -49,7 +50,7 @@
 %   (6) distribution_str - a string telling the code which droplet size
 %   distribution to use  - One can chose from two options:
 %       (a) 'mono' - monodispersed distribution
-%       (b) 'gamma' - gamma droplet distribution. 
+%       (b) 'gamma' - gamma droplet distribution.
 %       *** IMPORTANT *** For now, this function will NOT
 %       use precomputed mie calculations using a gamma droplet
 %       distribution. The values returned by LibRadTran appear erroneously
@@ -157,7 +158,7 @@ end
 
 if length(tau_c)>1 && length(tau_c)~=size(re,2)
 
-    error([newline,'The toptical depth must be either a single value or a vector equal in legnth to the number of columns in re.', newline])
+    error([newline,'The optical depth must be either a single value or a vector equal in legnth to the number of columns in re.', newline])
 end
 
 
@@ -225,8 +226,8 @@ computer_name = whatComputer;
 if strcmp(computer_name,'anbu8374')==true
 
     mie_calc_folder_path = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/Mie_Calculations/';
-    %water_cloud_folder_path = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/data/wc/';
-    water_cloud_folder_path = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/data/wc/wc2/';
+    water_cloud_folder_path = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/data/wc/';
+    %water_cloud_folder_path = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/data/wc/wc2/';
 
 elseif strcmp(computer_name,'andrewbuggee')==true
 
@@ -396,7 +397,7 @@ elseif (size(re,1)==1 || size(re,2)==1) && strcmp(vert_homogeneous_str, 'vert-no
             % This function only deals with liquid water clouds
             % define the index of refraction
             index_of_refraction = 'water';
-            
+
             % this loop applies to a vertical droplet profile. For now we
             % will apply the same distribution variance to each level in
             % the cloud.
@@ -421,7 +422,7 @@ elseif (size(re,1)==1 || size(re,2)==1) && strcmp(vert_homogeneous_str, 'vert-no
     end
 
 
-    % if the the radius is a vector and the homogenous string is defined as
+    % if the re input is a vector and the homogenous string is defined as
     % vertically homogeneous, then the code assumes each value in the vector is
     % a single cloud, and the each value defines the homogenous droplet size
     % for that cloud.
@@ -573,8 +574,13 @@ for nn = 1:num_files_2write
         lwc = 4/3 * pi * rho_liquid_water * (re(:,nn)*1e-6).^3 .* Nc;                    % g/m^3 - grams of water per meter cubed of air
 
         % create the water cloud file name
-        fileName{nn} = ['WC_rtop',num2str(round(re(end,nn))),'_rbot',num2str(round(re(1,nn))),'_T',num2str(round(tau_c(nn))),...
-            '_', distribution_str,'_nn',num2str(index), '.DAT'];
+        if index==0
+            fileName{nn} = ['WC_rtop',num2str(round(re(end,nn))),'_rbot',num2str(round(re(1,nn))),'_T',num2str(round(tau_c(nn))),...
+            '_', distribution_str,'_nn',num2str(nn), '.DAT'];
+        elseif index>0
+            fileName{nn} = ['WC_rtop',num2str(round(re(end,nn))),'_rbot',num2str(round(re(1,nn))),'_T',num2str(round(tau_c(nn))),...
+                '_', distribution_str,'_nn',num2str(index), '.DAT'];
+        end
 
     else
 
@@ -588,8 +594,14 @@ for nn = 1:num_files_2write
             (Qext(nn) * (H(nn)*1e3));                                                % g/m^3 - grams of water per meter cubed of air
 
         % create the water cloud file name
-        fileName{nn} = ['WC_r',num2str(round(re(nn))),'_T',num2str(round(tau_c(nn))),'_', distribution_str,...
-            '_nn',num2str(index), '.DAT'];
+        if index==0
+            fileName{nn} = ['WC_r',num2str(round(re(nn))),'_T',num2str(round(tau_c(nn))),'_', distribution_str,...
+                '_nn',num2str(nn), '.DAT'];
+        elseif index>0
+
+            fileName{nn} = ['WC_r',num2str(round(re(nn))),'_T',num2str(round(tau_c(nn))),'_', distribution_str,...
+                '_nn',num2str(index), '.DAT'];
+        end
 
     end
 
