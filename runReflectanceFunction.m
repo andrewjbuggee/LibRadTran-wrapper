@@ -59,7 +59,7 @@ for pp = 1:size(inputFileNames,1)
 
         % next step through the different values for r per band
         parfor rr = 1:size(inputFileNames,2)
-
+        %for rr = 1:size(inputFileNames,2)
 
             % if pp==1 && bb ==1 && rr == 1
 
@@ -117,7 +117,7 @@ end
 
 
 % Change to the proper MODIS data folder
-cd(saveCalcs_folder)
+cd(saveCalcs_folder);
 
 % Check to see that the file exists
 if isfile(saveCalcs_filename)==true

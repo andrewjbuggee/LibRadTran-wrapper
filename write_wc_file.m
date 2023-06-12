@@ -227,7 +227,6 @@ if strcmp(computer_name,'anbu8374')==true
 
     mie_calc_folder_path = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/Mie_Calculations/';
     water_cloud_folder_path = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/data/wc/';
-    %water_cloud_folder_path = '/Users/anbu8374/Documents/LibRadTran/libRadtran-2.0.4/data/wc/wc2/';
 
 elseif strcmp(computer_name,'andrewbuggee')==true
 
