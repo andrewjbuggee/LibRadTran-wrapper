@@ -370,6 +370,9 @@ elseif (size(re,1)==1 || size(re,2)==1) && strcmp(vert_homogeneous_str, 'vert-no
     % re must be a column vector
     re = reshape(re,[],1);
 
+    % the distribution variance should be a column vector
+    distribution_var = reshape(distribution_var, [], 1);
+
     % -------------------------------------------------------------------
     % ------ open the precomputed mie table and interpolate! ------------
     % -------------------------------------------------------------------
@@ -402,7 +405,7 @@ elseif (size(re,1)==1 || size(re,2)==1) && strcmp(vert_homogeneous_str, 'vert-no
             % the cloud.
 
             % integrate over a size distribution to get an average
-            [~, Qavg, ~] = average_mie_over_size_distribution(re, linspace(distribution_var,distribution_var,length(re)),...
+            [~, Qavg, ~] = average_mie_over_size_distribution(re, distribution_var,...
                 lambda,index_of_refraction, distribution_str);
 
         elseif strcmp(distribution_str,'mono')==true
@@ -431,6 +434,9 @@ elseif (size(re,1)==1 || size(re,2)==1) && strcmp(vert_homogeneous_str, 'vert-ho
 
     % re must be a column vector
     re = reshape(re,[],1);
+
+    % the distribution variance should be a column vector
+    distribution_var = reshape(distribution_var, [], 1);
 
     % -------------------------------------------------------------------
     % ------ open the precomputed mie table and interpolate! ------------

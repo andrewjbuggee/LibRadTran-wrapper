@@ -45,7 +45,7 @@ length_tau = size(outputFileNames,3);
 R = zeros(size(inputFileNames)); % each value here is integrated over the band provided
 Rl = cell(size(inputFileNames)); % each value here is the spectral reflectance over the entire band
 
-% Don't compute refelctivity with uvSpev
+% Don't compute refelctivity with uvSpec
 computeReflectivity = false;
 
 
