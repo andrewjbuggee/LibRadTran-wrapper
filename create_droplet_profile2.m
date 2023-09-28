@@ -35,13 +35,13 @@
 %       Physically, this too forces subadiabatic behavior at mid-levels.
 
 % OUTPUTS:
-%   (1) re - effective droplet radius profile
+%   (1) re - effective droplet radius profile (microns)
 
 
 % By Andrew John Buggee
 %%
 
-function re = create_droplet_profile2(re_topBottom,zT, independentVariable, constraint)
+function re = create_droplet_profile2(re_topBottom, zT, independentVariable, constraint)
 
 
 % ------------------------------------------------------------

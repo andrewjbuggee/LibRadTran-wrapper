@@ -178,6 +178,16 @@ if strcmp(vert_homogeneous_str, 'vert-homogeneous')==false && strcmp(vert_homoge
 end
 
 
+% ----- Check to see if there are any NaNs in the radius vector -----
+
+if any(isnan(re))==true
+
+    error([newline, 'The effective radius has atleast one NaN value.', newline])
+end
+
+
+
+
 
 
 
