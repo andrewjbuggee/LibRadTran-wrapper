@@ -52,7 +52,8 @@
 
 %%
 
-function [input_filename, output_filename, mie_folder] = write_mie_file(mie_program, index_refraction, re, wavelength, distribution, err_msg_str)
+function [input_filename, output_filename, mie_folder] = write_mie_file(mie_program, index_refraction,...
+            re, wavelength, distribution, err_msg_str, index)
 
 % ------------------------------------------------------------
 % ---------------------- CHECK INPUTS ------------------------
@@ -61,9 +62,9 @@ function [input_filename, output_filename, mie_folder] = write_mie_file(mie_prog
 % Check to make sure there are 7 inputs
 
 
-if nargin~=6
+if nargin~=7
     error([newline,'Not enough inputs. Need 6: mie program type, index of refraction, droplet effective radius',...
-        ' wavelength, droplet distribution info, and the error message command.', newline])
+        ' wavelength, droplet distribution info, the error message command and the file number.', newline])
 end
 
 
@@ -142,14 +143,16 @@ for ff = 1:numFiles
 
         if ischar(index_refraction)==1
 
-            input_filename = ['Mie_calc_refrac_',index_refraction,'_distribution_',distribution{1},'.INP'];
+            input_filename = ['Mie_calc_refrac_',index_refraction,'_distribution_',distribution{1},...
+                '_nn-',num2str(index),'.INP'];
             output_filename = ['OUTPUT_',input_filename(1:end-4)];
 
             % Create the water cloud file
             fileID = fopen([mie_folder,input_filename], 'w');
 
         elseif isnumeric(index_refraction)==1
-            input_filename = ['Mie_calc_refrac_',num2str(index_refraction),'_distribution_',distribution{1},'.INP'];
+            input_filename = ['Mie_calc_refrac_',num2str(index_refraction),'_distribution_',distribution{1},...
+                 '_nn-',num2str(index),'.INP'];
             output_filename = ['OUTPUT_',input_filename(1:end-4)];
 
             % Create the water cloud file
@@ -161,14 +164,16 @@ for ff = 1:numFiles
 
         if iscell(index_refraction)==1
 
-            input_filename{ff} = ['Mie_calc_refrac_',index_refraction{ff},'_distribution_',distribution{1},'.INP'];
+            input_filename{ff} = ['Mie_calc_refrac_',index_refraction{ff},'_distribution_',distribution{1},...
+                 '_nn-',num2str(index),'.INP'];
             output_filename{ff} = ['OUTPUT_',input_filename(1:end-4)];
 
             % Create the water cloud file
             fileID = fopen([mie_folder,input_filename{ff}], 'w');
 
         elseif isnumeric(index_refraction)==1
-            input_filename{ff} = ['Mie_calc_refrac_',num2str(index_refraction(ff,:)),'_distribution_',distribution{1},'.INP'];
+            input_filename{ff} = ['Mie_calc_refrac_',num2str(index_refraction(ff,:)),'_distribution_',...
+                distribution{1}, '_nn-',num2str(index),'.INP'];
             output_filename{ff} = ['OUTPUT_',input_filename(1:end-4)];
 
             % Create the water cloud file
