@@ -96,6 +96,11 @@ elseif strcmp(computer_name,'andrewbuggee')==true
 
     mie_folder = '/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval/LibRadTran/libRadtran-2.0.4/Mie_Calculations/';
 
+elseif strcmp(computer_name,'curc')==true
+
+    mie_folder = '/projects/anbu8374/LibRadTran/libRadtran-2.0.4/Mie_Calculations/';
+
+
 end
 
 %% Determine how many files need to be written
